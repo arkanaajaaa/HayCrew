@@ -1,20 +1,22 @@
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
+// import 'package:haycrew_app/pages/login_page/loginPage.dart';
 
-void main() {
-  runApp(const MainApp());
-}
+// void main() {
+//   runApp(const MyApp());
+// }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+// class MyApp extends StatelessWidget {
+//   const MyApp({Key? key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       title: 'HayCrew Login',
+//       theme: ThemeData(
+//         fontFamily: 'Poppins', // Opsional: gunakan font yang mirip jika ada
+//       ),
+//       home: const LoginPage(),
+//     );
+//   }
+// }
