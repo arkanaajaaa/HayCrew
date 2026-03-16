@@ -9,8 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-    assets: 
-      assets/images/logo,png
   get: ^4.7.2
   shared_preferences: ^2.5.4
   intl: ^0.18.0
@@ -23,3 +21,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  # Assets configuration
+  assets:
+    - assets/images/
