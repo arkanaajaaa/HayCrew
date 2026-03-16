@@ -1,50 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-class CTextfield extends StatelessWidget {
-  final bool isNumber;
+class CTextField extends StatelessWidget {
   final TextEditingController controller;
-  final String label;
-  final Color labelColor;
-  final bool pass;
+  final String hintText;
+  final String? labelText;
+  final IconData? prefixIcon;
   final bool obscureText;
-  final Color? bordercolor;
-  final double? borderWidht;
-  final double? borderRadius;
+  final TextInputType keyboardType;
 
-  const CTextfield({
+  const CTextField({
     super.key,
     required this.controller,
-    required this.label,
-    required this.labelColor,
-    required this.pass,
-    required this.isNumber,
-    required this.borderRadius,
-    required this.borderWidht,
-    required this.bordercolor,
-    required this.obscureText,
+    required this.hintText,
+    this.labelText,
+    this.prefixIcon,
+    this.obscureText = false,
+    this.keyboardType = TextInputType.text,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : [],
       controller: controller,
       obscureText: obscureText,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: labelColor),
+        hintText: hintText,
+        labelText: labelText,
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius ?? 20.0),
-          borderSide: BorderSide(
-            color: bordercolor ?? Colors.grey,
-            width: borderWidht ?? 1.0,
-          ),
+          borderRadius: BorderRadius.circular(12),
         ),
-        prefixIcon: isNumber
-            ? const Icon(Icons.numbers)
-            : const Icon(Icons.person),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
