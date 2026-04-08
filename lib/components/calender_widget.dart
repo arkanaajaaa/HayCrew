@@ -4,7 +4,6 @@ import '../constants/app_colors.dart';
 import '../models/calender_event_model.dart';
 import '../services/google_calender_service.dart';
 
-/// Widget calendar yang bisa tersambung dengan Google Calendar
 class CalendarWidget extends StatefulWidget {
   final Function(DateTime)? onDateSelected;
   final bool enableGoogleCalendar;
@@ -28,7 +27,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   @override
   void initState() {
     super.initState();
-    // Set ke awal minggu (Senin)
     _selectedWeekStart = _getStartOfWeek(DateTime.now());
     
     if (widget.enableGoogleCalendar) {
@@ -36,18 +34,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     }
   }
 
-  /// Get start of week (Monday)
   DateTime _getStartOfWeek(DateTime date) {
     final daysFromMonday = date.weekday - 1;
     return date.subtract(Duration(days: daysFromMonday));
   }
 
-  /// Load events dari Google Calendar
   Future<void> _loadEvents() async {
     if (!widget.enableGoogleCalendar) return;
-
     setState(() => _isLoading = true);
-
     try {
       if (!_calendarService.isSignedIn) {
         final signedIn = await _calendarService.signIn();
@@ -56,7 +50,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
           return;
         }
       }
-
       final events = await _calendarService.getEventsForWeek(_selectedWeekStart);
       setState(() {
         _events = events;
@@ -68,15 +61,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     }
   }
 
-  /// Get list tanggal untuk seminggu
+  // 1. Ditingkatkan menjadi 14 hari (2 minggu) agar bisa di-scroll
   List<DateTime> _getWeekDates() {
     return List.generate(
-      5, 
+      10, 
       (index) => _selectedWeekStart.add(Duration(days: index))
     );
   }
 
-  /// Navigate ke minggu sebelumnya
   void _previousWeek() {
     setState(() {
       _selectedWeekStart = _selectedWeekStart.subtract(const Duration(days: 7));
@@ -86,7 +78,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     }
   }
 
-  /// Navigate ke minggu berikutnya
   void _nextWeek() {
     setState(() {
       _selectedWeekStart = _selectedWeekStart.add(const Duration(days: 7));
@@ -102,7 +93,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16), // Padding horizontal dihapus agar scroll mepet tepi
       decoration: BoxDecoration(
         color: AppColors.calendarBackground,
         borderRadius: BorderRadius.circular(12),
@@ -110,12 +101,11 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header dengan bulan dan navigasi
-          _buildHeader(),
-          
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildHeader(),
+          ),
           const SizedBox(height: 12),
-          
-          // Calendar grid
           if (_isLoading)
             _buildLoadingState()
           else
@@ -125,7 +115,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  /// Build header dengan nama bulan dan tombol navigasi
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -167,7 +156,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  /// Build loading state
   Widget _buildLoadingState() {
     return const Center(
       child: Padding(
@@ -177,18 +165,24 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  /// Build calendar grid dengan tanggal-tanggal
+  // 2. Menggunakan SingleChildScrollView agar bisa digeser (swipe)
   Widget _buildCalendarGrid(List<DateTime> weekDates) {
-    return Row(
-      children: weekDates.map((date) {
-        return Expanded(
-          child: _buildDateCard(date),
-        );
-      }).toList(),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 12), // Jarak awal scroll
+      child: Row(
+        children: weekDates.map((date) {
+          return SizedBox(
+            width: 80, // Ukuran lebar kartu yang konsisten
+            child: _buildDateCard(date),
+          );
+        }).toList(),
+      ),
     );
   }
 
-  /// Build card untuk satu tanggal
+  // 3. Update Card (Menghapus Expanded & Memastikan Center)
   Widget _buildDateCard(DateTime date) {
     final dateKey = DateTime(date.year, date.month, date.day);
     final hasEvents = _events.containsKey(dateKey) && _events[dateKey]!.isNotEmpty;
@@ -202,7 +196,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isToday 
               ? AppColors.primaryGreen.withOpacity(0.8)
@@ -213,37 +207,44 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               : null,
         ),
         child: Stack(
+          alignment: Alignment.center,
           children: [
             Column(
+              mainAxisAlignment: MainAxisAlignment.center, 
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   date.day.toString(),
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  hasEvents 
-                      ? '$eventsCount event${eventsCount > 1 ? 's' : ''}'
-                      : 'Tidak ada\nevent',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Text(
+                    hasEvents 
+                        ? '$eventsCount event'
+                        : 'Tidak ada\nevent',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      height: 1.1,
+                    ),
                   ),
                 ),
               ],
             ),
             if (hasEvents)
               Positioned(
-                top: 0,
-                right: 8,
+                top: -2,
+                right: 2,
                 child: Container(
-                  width: 8,
-                  height: 8,
+                  width: 7,
+                  height: 7,
                   decoration: const BoxDecoration(
                     color: Colors.red,
                     shape: BoxShape.circle,
@@ -256,7 +257,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  /// Check apakah tanggal adalah hari ini
   bool _isToday(DateTime date) {
     final now = DateTime.now();
     return date.year == now.year && 
@@ -264,21 +264,15 @@ class _CalendarWidgetState extends State<CalendarWidget> {
            date.day == now.day;
   }
 
-  /// Show dialog dengan list events untuk tanggal tertentu
   void _showEventsDialog(DateTime date) {
     final dateKey = DateTime(date.year, date.month, date.day);
     final events = _events[dateKey] ?? [];
-
-    if (events.isEmpty) {
-      return;
-    }
+    if (events.isEmpty) return;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(date),
-        ),
+        title: Text(DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(date)),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -289,22 +283,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               return ListTile(
                 leading: const Icon(Icons.event, color: AppColors.primaryGreen),
                 title: Text(event.title),
-                subtitle: event.description != null 
-                    ? Text(event.description!) 
-                    : null,
-                trailing: Text(
-                  DateFormat('HH:mm').format(event.date),
-                  style: const TextStyle(fontSize: 12),
-                ),
+                subtitle: event.description != null ? Text(event.description!) : null,
+                trailing: Text(DateFormat('HH:mm').format(event.date), style: const TextStyle(fontSize: 12)),
               );
             },
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tutup'),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Tutup')),
         ],
       ),
     );
