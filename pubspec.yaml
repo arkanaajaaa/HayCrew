@@ -13,6 +13,10 @@ dependencies:
   shared_preferences: ^2.5.4
   intl: ^0.18.0
   http: ^1.6.0
+  google_sign_in: ^6.1.5
+  googleapis: ^11.4.0
+  googleapis_auth: ^1.4.1
+  table_calendar: ^3.0.9
 
 dev_dependencies:
   flutter_test:
@@ -21,3 +25,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  # Assets configuration
+  assets:
+    - assets/images/
