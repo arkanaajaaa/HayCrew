@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'routes/app_pages.dart';
 import 'constants/app_colors.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'; // Pastikan ini tetap ada
 
 void main() async {
   // Initialize locale data untuk Bahasa Indonesia
@@ -21,6 +22,19 @@ class MyApp extends StatelessWidget {
       title: 'HayCrew App',
       debugShowCheckedModeBanner: false,
       
+      // --- TAMBAHKAN KONFIGURASI LOKALISASI DI SINI ---
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('id', 'ID'), // Bahasa Indonesia
+        Locale('en', 'US'), // English (Backup)
+      ],
+      locale: const Locale('id', 'ID'), // Memaksa aplikasi menggunakan format Indonesia
+      // -----------------------------------------------
+
       // Theme Configuration
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(

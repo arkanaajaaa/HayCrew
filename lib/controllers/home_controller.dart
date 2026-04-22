@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/status_permintaan_model.dart';
 import '../services/google_calender_service.dart';
-import '../routes/app_routes.dart';
+import 'package:haycrew_app/routes/app_routes.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -129,7 +129,7 @@ class HomeController extends GetxController {
   
   void navigateToLaporKandang() {
     // Get.toNamed(AppRoutes.LAPOR_KANDANG);
-    _showUnderDevelopmentSnackbar('Lapor Kandang');
+    Get.toNamed(AppRoutes.LAPOR_KANDANG);
   }
 
   void navigateToKirimPermintaan() {

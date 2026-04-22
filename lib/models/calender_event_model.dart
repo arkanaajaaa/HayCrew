@@ -52,7 +52,6 @@ class CalendarEventModel {
       googleEventId: event.id,
     );
   }
-
   /// Copy with method
   CalendarEventModel copyWith({
     String? id,

@@ -10,6 +10,7 @@ class CButton extends StatelessWidget {
   final double height;
   final IconData? icon;
   final double fontSize;
+  final FontWeight fontWeight; // 1. Tambahkan deklarasi variabel
 
   const CButton({
     super.key,
@@ -22,6 +23,7 @@ class CButton extends StatelessWidget {
     this.height = 56,
     this.icon,
     this.fontSize = 18,
+    this.fontWeight = FontWeight.w600, // 2. Tambahkan di constructor dengan default w600
   });
 
   @override
@@ -35,7 +37,7 @@ class CButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 8), // Tambahkan sedikit padding dalam
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           elevation: 0,
         ),
         onPressed: onPressed,
@@ -46,19 +48,16 @@ class CButton extends StatelessWidget {
               Icon(icon, color: textColor),
               const SizedBox(width: 8),
             ],
-            // 1. Tambahkan Flexible agar teks menyesuaikan ruang yang ada
             Flexible(
               child: Text(
                 text,
-                // 2. Tambahkan TextAlign agar teks tetap rapi saat turun ke baris baru
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: textColor,
                   fontSize: fontSize,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: fontWeight, // 3. Gunakan variabel di sini
                   letterSpacing: 0.5,
                 ),
-                // 3. Opsional: batasi baris agar tidak merusak layout jika terlalu panjang
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
