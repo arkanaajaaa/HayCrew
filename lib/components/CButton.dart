@@ -14,11 +14,11 @@ class CButton extends StatelessWidget {
     super.key,
     required this.text,
     required this.onPressed,
-    this.color = Colors.blue,
+    this.color = const Color(0xFF2D5F3F),
     this.textColor = Colors.white,
     this.borderRadius = 12,
     this.width = double.infinity,
-    this.height = 50,
+    this.height = 56,
     this.icon,
   });
 
@@ -33,6 +33,7 @@ class CButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
+          elevation: 0,
         ),
         onPressed: onPressed,
         child: Row(
@@ -44,8 +45,9 @@ class CButton extends StatelessWidget {
               text,
               style: TextStyle(
                 color: textColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
               ),
             ),
           ],
