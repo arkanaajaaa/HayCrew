@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import '../routes/app_routes.dart';
 
 /// Controller untuk Login Page
 /// Handles semua state dan logic untuk login
@@ -120,15 +121,16 @@ class LoginController extends GetxController {
         duration: const Duration(seconds: 2),
       );
 
-      // Navigate to HomePage (uncomment setelah integrate)
-      // Get.offAll(() => HomePageMultiDashboard(
-      //   userId: mockUserData['userId']!,
-      //   userName: mockUserData['name']!,
-      //   userRole: mockUserData['role']!,
-      // ));
-
-      // For now, just log
-      print('Login Success: $mockUserData');
+      // Navigate to HomePage menggunakan named route
+      Get.offAllNamed(
+        AppRoutes.DASHBOARD_KANDANG,
+        arguments: {
+          'userName': mockUserData['name'],
+          'userRole': mockUserData['role'],
+          'userId': mockUserData['userId'],
+        },
+      );
+      
     } catch (e) {
       isLoading.value = false;
 
@@ -145,6 +147,9 @@ class LoginController extends GetxController {
 
   /// Handle forgot password
   void handleForgotPassword() {
+    // TODO: Navigate to forgot password page
+    // Get.toNamed(AppRoutes.FORGOT_PASSWORD);
+    
     Get.snackbar(
       'Info',
       'Fitur reset password akan segera tersedia',
@@ -157,6 +162,9 @@ class LoginController extends GetxController {
 
   /// Handle register
   void handleRegister() {
+    // TODO: Navigate to register page
+    // Get.toNamed(AppRoutes.REGISTER);
+    
     Get.snackbar(
       'Info',
       'Fitur registrasi akan segera tersedia',
