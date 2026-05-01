@@ -23,7 +23,8 @@ class CButton extends StatelessWidget {
     this.height = 56,
     this.icon,
     this.fontSize = 18,
-    this.fontWeight = FontWeight.w600, // 2. Tambahkan di constructor dengan default w600
+    this.fontWeight =
+        FontWeight.w600, // 2. Tambahkan di constructor dengan default w600
   });
 
   @override

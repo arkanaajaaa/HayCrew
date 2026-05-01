@@ -8,11 +8,8 @@ class StatusCardWidget extends StatelessWidget {
   final StatusPermintaanModel status;
   final VoidCallback? onTap;
 
-  const StatusCardWidget({
-    Key? key,
-    required this.status,
-    this.onTap,
-  }) : super(key: key);
+  const StatusCardWidget({Key? key, required this.status, this.onTap})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -37,16 +34,14 @@ class StatusCardWidget extends StatelessWidget {
           children: [
             // Date Section
             _buildDateSection(),
-            
+
             const SizedBox(width: 20),
-            
+
             // Content Section
-            Expanded(
-              child: _buildContentSection(),
-            ),
-            
+            Expanded(child: _buildContentSection()),
+
             const SizedBox(width: 12),
-            
+
             // Status Badge
             _buildStatusBadge(),
           ],
@@ -100,10 +95,7 @@ class StatusCardWidget extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             status.subtitle!,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -115,10 +107,7 @@ class StatusCardWidget extends StatelessWidget {
   /// Build status badge
   Widget _buildStatusBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),

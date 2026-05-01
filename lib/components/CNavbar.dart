@@ -8,17 +8,18 @@ class CBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inisialisasi atau cari controller yang sudah ada
-    final NavbarController navController = Get.put(NavbarController());
+    // Get.find() — pakai instance yang sudah ada dari HomeBinding
+    // Tidak membuat instance baru setiap kali widget di-build
+    final NavbarController navController = Get.find<NavbarController>();
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.primaryGreen,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color:      Colors.black.withOpacity(0.1),
             blurRadius: 10,
-            offset: const Offset(0, -5),
+            offset:     const Offset(0, -5),
           ),
         ],
       ),
@@ -29,25 +30,25 @@ class CBottomNav extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(
-                icon: Icons.home,
-                label: 'Beranda',
-                index: 0,
+                icon:         Icons.home,
+                label:        'Beranda',
+                index:        0,
                 currentIndex: navController.currentNavIndex.value,
-                onTap: () => navController.changeNavIndex(0),
+                onTap:        () => navController.changeNavIndex(0),
               ),
               _buildNavItem(
-                icon: Icons.history,
-                label: 'Riwayat',
-                index: 1,
+                icon:         Icons.history,
+                label:        'Riwayat',
+                index:        1,
                 currentIndex: navController.currentNavIndex.value,
-                onTap: () => navController.changeNavIndex(1),
+                onTap:        () => navController.changeNavIndex(1),
               ),
               _buildNavItem(
-                icon: Icons.person,
-                label: 'Profil',
-                index: 2,
+                icon:         Icons.person,
+                label:        'Profil',
+                index:        2,
                 currentIndex: navController.currentNavIndex.value,
-                onTap: () => navController.changeNavIndex(2),
+                onTap:        () => navController.changeNavIndex(2),
               ),
             ],
           )),
@@ -64,9 +65,9 @@ class CBottomNav extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final isSelected = currentIndex == index;
-    
+
     return InkWell(
-      onTap: onTap,
+      onTap:        onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -76,14 +77,14 @@ class CBottomNav extends StatelessWidget {
             Icon(
               icon,
               color: Colors.white.withOpacity(isSelected ? 1.0 : 0.6),
-              size: 28,
+              size:  28,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: Colors.white.withOpacity(isSelected ? 1.0 : 0.6),
-                fontSize: 12,
+                color:      Colors.white.withOpacity(isSelected ? 1.0 : 0.6),
+                fontSize:   12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -91,9 +92,9 @@ class CBottomNav extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.only(top: 4),
                 height: 2,
-                width: 20,
+                width:  20,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color:        AppColors.white,
                   borderRadius: BorderRadius.circular(1),
                 ),
               ),
