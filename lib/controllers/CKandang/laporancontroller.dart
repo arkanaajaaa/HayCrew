@@ -35,7 +35,9 @@ class LaporanController extends GetxController {
   }
 
   void pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery); // atau bisa ImageSource.camera
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    ); // atau bisa ImageSource.camera
     if (picked != null) {
       image.value = File(picked.path);
     }

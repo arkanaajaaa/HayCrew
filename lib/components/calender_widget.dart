@@ -7,7 +7,7 @@ import '../services/google_calender_service.dart';
 class CalendarWidget extends StatefulWidget {
   final Function(DateTime)? onDateSelected;
   final bool enableGoogleCalendar;
-  
+
   const CalendarWidget({
     Key? key,
     this.onDateSelected,
@@ -28,7 +28,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   void initState() {
     super.initState();
     _selectedWeekStart = _getStartOfWeek(DateTime.now());
-    
+
     if (widget.enableGoogleCalendar) {
       _loadEvents();
     }
@@ -50,7 +50,9 @@ class _CalendarWidgetState extends State<CalendarWidget> {
           return;
         }
       }
-      final events = await _calendarService.getEventsForWeek(_selectedWeekStart);
+      final events = await _calendarService.getEventsForWeek(
+        _selectedWeekStart,
+      );
       setState(() {
         _events = events;
         _isLoading = false;
@@ -64,8 +66,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   // 1. Ditingkatkan menjadi 14 hari (2 minggu) agar bisa di-scroll
   List<DateTime> _getWeekDates() {
     return List.generate(
-      10, 
-      (index) => _selectedWeekStart.add(Duration(days: index))
+      10,
+      (index) => _selectedWeekStart.add(Duration(days: index)),
     );
   }
 
@@ -93,7 +95,9 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(vertical: 16), // Padding horizontal dihapus agar scroll mepet tepi
+      padding: const EdgeInsets.symmetric(
+        vertical: 16,
+      ), // Padding horizontal dihapus agar scroll mepet tepi
       decoration: BoxDecoration(
         color: AppColors.calendarBackground,
         borderRadius: BorderRadius.circular(12),
@@ -121,10 +125,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       children: [
         Text(
           DateFormat('MMMM yyyy', 'id_ID').format(_selectedWeekStart),
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         Row(
           children: [
@@ -185,7 +186,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   // 3. Update Card (Menghapus Expanded & Memastikan Center)
   Widget _buildDateCard(DateTime date) {
     final dateKey = DateTime(date.year, date.month, date.day);
-    final hasEvents = _events.containsKey(dateKey) && _events[dateKey]!.isNotEmpty;
+    final hasEvents =
+        _events.containsKey(dateKey) && _events[dateKey]!.isNotEmpty;
     final eventsCount = _events[dateKey]?.length ?? 0;
     final isToday = _isToday(date);
 
@@ -198,19 +200,17 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isToday 
+          color: isToday
               ? AppColors.primaryGreen.withOpacity(0.8)
               : AppColors.primaryGreen,
           borderRadius: BorderRadius.circular(8),
-          border: isToday 
-              ? Border.all(color: Colors.white, width: 2)
-              : null,
+          border: isToday ? Border.all(color: Colors.white, width: 2) : null,
         ),
         child: Stack(
           alignment: Alignment.center,
           children: [
             Column(
-              mainAxisAlignment: MainAxisAlignment.center, 
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
@@ -225,9 +225,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Text(
-                    hasEvents 
-                        ? '$eventsCount event'
-                        : 'Tidak ada\nevent',
+                    hasEvents ? '$eventsCount event' : 'Tidak ada\nevent',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -259,9 +257,9 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && 
-           date.month == now.month && 
-           date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   void _showEventsDialog(DateTime date) {
@@ -283,14 +281,22 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               return ListTile(
                 leading: const Icon(Icons.event, color: AppColors.primaryGreen),
                 title: Text(event.title),
-                subtitle: event.description != null ? Text(event.description!) : null,
-                trailing: Text(DateFormat('HH:mm').format(event.date), style: const TextStyle(fontSize: 12)),
+                subtitle: event.description != null
+                    ? Text(event.description!)
+                    : null,
+                trailing: Text(
+                  DateFormat('HH:mm').format(event.date),
+                  style: const TextStyle(fontSize: 12),
+                ),
               );
             },
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Tutup')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tutup'),
+          ),
         ],
       ),
     );

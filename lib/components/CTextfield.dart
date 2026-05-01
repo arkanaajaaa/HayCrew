@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../constants/app_colors.dart';
 
 class CTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -9,6 +11,9 @@ class CTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final Color? fillColor;
   final Color? hintColor;
+  // ─── Props baru ───────────────────────────────────────────────────────────
+  final List<TextInputFormatter>? inputFormatters;
+  final int maxLines;
 
   const CTextField({
     super.key,
@@ -20,6 +25,8 @@ class CTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.fillColor,
     this.hintColor,
+    this.inputFormatters,
+    this.maxLines = 1, // default tetap 1 agar tidak breaking existing usage
   });
 
   @override
@@ -28,16 +35,18 @@ class CTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hintText,
         labelText: labelText,
         hintStyle: TextStyle(
-          color: hintColor ?? const Color(0xFF2D5F3F),
+          color: hintColor ?? AppColors.primaryGreen,
           fontSize: 16,
         ),
         prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
         filled: true,
-        fillColor: fillColor ?? const Color(0xFFF5F5DC),
+        fillColor: fillColor ?? AppColors.textFieldBg,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -48,10 +57,7 @@ class CTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFF2D5F3F),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
