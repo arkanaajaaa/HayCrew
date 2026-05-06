@@ -5,17 +5,9 @@ import '../../../constants/app_colors.dart';
 import '../../../controllers/home_controller.dart';
 import '../../../components/calender_widget.dart';
 import '../../../components/status_card_widget.dart';
-import '../../../components/CNavbar.dart'; // Import komponen baru
 
 class HomePageKandang extends StatelessWidget {
-  final String? userName;
-  final String? userRole;
-
-  const HomePageKandang({
-    Key? key,
-    this.userName,
-    this.userRole,
-  }) : super(key: key);
+  const HomePageKandang({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +19,7 @@ class HomePageKandang extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(controller),
+            _HomeHeader(controller: controller),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: controller.refreshData,
@@ -37,20 +29,24 @@ class HomePageKandang extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CalendarWidget(
-                        onDateSelected: (date) => print('Selected date: $date'),
+                        onDateSelected: (date) =>
+                            print('Selected date: $date'),
                         enableGoogleCalendar: true,
                       ),
-                      _buildActionButtons(controller),
+                      _HomeActionButtons(controller: controller),
                       const SizedBox(height: 24),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'Status Permintaan',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _buildStatusList(controller),
+                      _HomeStatusList(controller: controller),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -60,14 +56,21 @@ class HomePageKandang extends StatelessWidget {
           ],
         ),
       ),
-      // Cukup panggil komponen reusable di sini
-      bottomNavigationBar: const CBottomNav(),
     );
   }
+}
 
-  // --- Widget Helper (Semua tetap utuh sesuai kode awalmu) ---
+/// Header bagian atas halaman beranda.
+/// Menampilkan salam + nama user + role + tombol notifikasi.
+/// Menggunakan Obx agar nama & role langsung update
+/// jika HomeController mengubah nilainya.
+class _HomeHeader extends StatelessWidget {
+  final HomeController controller;
 
-  Widget _buildHeader(HomeController controller) {
+  const _HomeHeader({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -83,32 +86,64 @@ class HomePageKandang extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Bagian kiri: salam + nama + role
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Text('Halo, ', style: TextStyle(fontSize: 28, color: AppColors.primaryGreen)),
+                    const Text(
+                      'Halo, ',
+                      style: TextStyle(
+                        fontSize: 28,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
                     Flexible(
-                      child: Text(
-                        userName ?? controller.userName ?? 'User',
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
-                        overflow: TextOverflow.ellipsis,
+                      child: Obx(
+                        // Obx memantau userName agar teks langsung
+                        // berubah tanpa perlu rebuild seluruh halaman
+                        () => Text(
+                          controller.userName.value,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryGreen,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(userRole ?? controller.userRole ?? 'Karyawan', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                Obx(
+                  () => Text(
+                    controller.userRole.value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
+
+          // Bagian kanan: tombol notifikasi
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              shape: BoxShape.circle,
+            ),
             child: IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryGreen, size: 24),
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: AppColors.primaryGreen,
+                size: 24,
+              ),
               onPressed: controller.navigateToNotifications,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -118,12 +153,24 @@ class HomePageKandang extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildActionButtons(HomeController controller) {
+/// Dua tombol aksi utama di halaman beranda.
+/// Menggunakan CButton dari components/CButton.dart.
+/// Masing-masing memanggil fungsi navigasi di HomeController
+/// yang melakukan Get.toNamed ke route LaporanPage / PermintaanPage.
+class _HomeActionButtons extends StatelessWidget {
+  final HomeController controller;
+
+  const _HomeActionButtons({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
+          // Tombol kiri — navigasi ke LaporanPage
           Expanded(
             child: CButton(
               text: 'Lapor Kandang',
@@ -135,6 +182,7 @@ class HomePageKandang extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
+          // Tombol kanan — navigasi ke PermintaanPage
           Expanded(
             child: CButton(
               text: 'Kirim Permintaan',
@@ -149,38 +197,70 @@ class HomePageKandang extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildStatusList(HomeController controller) {
+/// Daftar kartu status permintaan.
+/// Menggunakan StatusCardWidget dari components/status_card_widget.dart.
+///
+/// Obx di sini memantau dua observable dari HomeController:
+/// - isLoading  → tampilkan CircularProgressIndicator
+/// - statusList → tampilkan daftar kartu atau pesan kosong
+class _HomeStatusList extends StatelessWidget {
+  final HomeController controller;
+
+  const _HomeStatusList({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
     return Obx(() {
+      // State 1: sedang loading data dari API
       if (controller.isLoading.value) {
         return const Center(
-  child: Padding(
-    padding: EdgeInsets.all(32),
-    child: CircularProgressIndicator(),
-  ),
-);
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: CircularProgressIndicator(
+              color: AppColors.primaryGreen,
+            ),
+          ),
+        );
       }
+
+      // State 2: data kosong (belum ada permintaan)
       if (controller.statusList.isEmpty) {
         return Center(
-  child: Padding(
-    padding: const EdgeInsets.all(32),
-    child: Column(
-      mainAxisSize: MainAxisSize.min, // Tambahkan ini agar Column tidak memakan semua ruang vertikal
-      children: [
-        Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
-        const SizedBox(height: 16),
-        Text(
-          'Tidak ada status permintaan',
-          style: TextStyle(color: Colors.grey[600], fontSize: 16),
-        ),
-      ],
-    ),
-  ),
-);
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.inbox_outlined,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Tidak ada status permintaan',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       }
+
+      // State 3: ada data — tampilkan daftar StatusCardWidget
+      // StatusCardWidget sudah reusable dari components/status_card_widget.dart
+      // onTap memanggil navigateToDetail yang menampilkan AlertDialog
       return Column(
         children: controller.statusList.map((status) {
-          return StatusCardWidget(status: status, onTap: () => controller.navigateToDetail(status));
+          return StatusCardWidget(
+            status: status,
+            onTap: () => controller.navigateToDetail(status),
+          );
         }).toList(),
       );
     });

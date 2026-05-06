@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
-import 'package:haycrew_app/controllers/navbar_controller.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
 
 class ProfilMenuItem {
@@ -98,18 +97,9 @@ class ProfilController extends GetxController {
 
     // Sync highlight navbar ke index 2 (Profil)
     // NavbarController sudah ada karena di-register permanent di HomeBinding
-    Get.find<NavbarController>().currentNavIndex.value = 2;
+
   }
 
-  @override
-  void onClose() {
-    // Saat keluar dari ProfilPage via back button, kembalikan highlight ke 0
-    // hanya jika tujuan kembali adalah Home
-    if (Get.find<NavbarController>().currentNavIndex.value == 2) {
-      Get.find<NavbarController>().currentNavIndex.value = 0;
-    }
-    super.onClose();
-  }
 
   // ─── Actions ──────────────────────────────────────────────────────────────
 

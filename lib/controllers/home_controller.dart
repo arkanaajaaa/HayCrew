@@ -13,21 +13,23 @@ class HomeController extends GetxController {
   final RxBool isLoading           = false.obs;
   final RxBool isCalendarConnected = false.obs;
 
-  String? userName;
-  String? userRole;
-  String? userId;
+  var userName = 'User'.obs;
+  var userRole = 'Karyawan'.obs;
+  var userId;
 
   @override
-  void onInit() {
-    super.onInit();
-    final args = Get.arguments as Map<String, dynamic>?;
-    userName = args?['userName'] ?? 'User';
-    userRole = args?['userRole'] ?? 'Karyawan';
-    userId   = args?['userId'];
-    loadStatusPermintaan();
-    checkCalendarConnection();
-  }
-
+void onInit() {
+  super.onInit();
+  final args = Get.arguments as Map<String, dynamic>?;
+  
+  // Gunakan .value untuk mengupdate nilai variabel observable
+  userName.value = args?['userName'] ?? 'User';
+  userRole.value = args?['userRole'] ?? 'Karyawan';
+  
+  userId = args?['userId'];
+  loadStatusPermintaan();
+  checkCalendarConnection();
+}
   // ─── Service & Data ───────────────────────────────────────────────────────
 
   Future<void> checkCalendarConnection() async {
