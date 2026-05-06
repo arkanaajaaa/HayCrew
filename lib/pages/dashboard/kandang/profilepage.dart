@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:haycrew_app/components/CNavbar.dart';
+
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/profilecontroller.dart';
 
@@ -22,7 +22,6 @@ class ProfilPage extends GetView<ProfilController> {
           ],
         ),
       ),
-      bottomNavigationBar: const CBottomNav(),
     );
   }
 
