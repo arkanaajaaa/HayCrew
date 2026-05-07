@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CButton.dart';
 import 'package:haycrew_app/components/CTextfield.dart';
+import 'package:haycrew_app/components/CAppBar.dart';           // ← reusable
+import 'package:haycrew_app/components/CDateRangePicker.dart';  // ← reusable
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CKandang/permintaancontroller.dart';
 
-/// PermintaanKandangPage — MURNI UI
-/// Menggunakan CTextField, CButton, AppColors.
-/// Tidak ada satu pun logic bisnis di file ini — semua dari PermintaanController.
 class PermintaanKandangPage extends GetView<PermintaanController> {
   const PermintaanKandangPage({Key? key}) : super(key: key);
 
@@ -15,31 +14,46 @@ class PermintaanKandangPage extends GetView<PermintaanController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      appBar: _buildAppBar(),
+      appBar: const CAppBar(
+        title: 'Permintaan\nDana / Barang',
+        multiLineTitle: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 8),
-            _DateRangePickerField(),
+
+            // Date Range — menggunakan CDateRangePicker
+            Obx(
+              () => CDateRangePicker(
+                displayText: controller.formattedDateRange.value,
+                onTap: controller.onTapDatePicker,
+              ),
+            ),
             const SizedBox(height: 18),
+
             _SectionLabel(text: 'Jenis permintaan*'),
             const SizedBox(height: 8),
             _JenisPermintaanRadioGroup(),
             const SizedBox(height: 18),
+
             _SectionLabel(text: 'Keperluan*'),
             const SizedBox(height: 8),
             _KeperluanField(),
             const SizedBox(height: 18),
+
             _NominalLabelObs(),
             const SizedBox(height: 8),
             _NominalField(),
             const SizedBox(height: 18),
+
             _SectionLabel(text: 'Keterangan'),
             const SizedBox(height: 8),
             _KeteranganField(),
             const SizedBox(height: 32),
+
             _SubmitButton(),
             const SizedBox(height: 24),
           ],
@@ -47,35 +61,12 @@ class PermintaanKandangPage extends GetView<PermintaanController> {
       ),
     );
   }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColors.white,
-      elevation: 0,
-      centerTitle: true,
-      title: const Text(
-        'Permintaan\nDana / Barang',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: AppColors.primaryGreen,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          height: 1.3,
-        ),
-      ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.primaryGreen),
-        onPressed: Get.back,
-      ),
-    );
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PRIVATE WIDGET COMPONENTS
+// PRIVATE WIDGET COMPONENTS (tidak berubah dari versi sebelumnya)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/// Label judul tiap field
 class _SectionLabel extends StatelessWidget {
   final String text;
   const _SectionLabel({required this.text});
@@ -93,47 +84,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Date range picker — tampil seperti field, onTap ke controller
-class _DateRangePickerField extends GetView<PermintaanController> {
-  const _DateRangePickerField();
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: controller.onTapDatePicker,
-      child: Obx(
-        () => Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          decoration: BoxDecoration(
-            color: AppColors.textFieldBg,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                controller.formattedDateRange.value,
-                style: const TextStyle(
-                  color: AppColors.primaryGreen,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                ),
-              ),
-              const Icon(
-                Icons.calendar_today,
-                color: AppColors.primaryGreen,
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Radio group Barang / Dana
 class _JenisPermintaanRadioGroup extends GetView<PermintaanController> {
   const _JenisPermintaanRadioGroup();
 
@@ -159,7 +109,6 @@ class _JenisPermintaanRadioGroup extends GetView<PermintaanController> {
   }
 }
 
-/// Satu opsi radio button — murni presentasi, tidak ada logic
 class _RadioOption extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -178,7 +127,6 @@ class _RadioOption extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Lingkaran luar
           Container(
             width: 20,
             height: 20,
@@ -189,7 +137,6 @@ class _RadioOption extends StatelessWidget {
                 width: 2,
               ),
             ),
-            // Titik dalam saat terpilih
             child: isSelected
                 ? Center(
                     child: Container(
@@ -218,20 +165,15 @@ class _RadioOption extends StatelessWidget {
   }
 }
 
-/// Field Keperluan menggunakan CTextField
 class _KeperluanField extends GetView<PermintaanController> {
   const _KeperluanField();
 
   @override
   Widget build(BuildContext context) {
-    return CTextField(
-      controller: controller.keperluanController,
-      hintText:   '',
-    );
+    return CTextField(controller: controller.keperluanController, hintText: '');
   }
 }
 
-/// Label nominal reaktif — berubah teks sesuai jenis permintaan
 class _NominalLabelObs extends GetView<PermintaanController> {
   const _NominalLabelObs();
 
@@ -241,8 +183,6 @@ class _NominalLabelObs extends GetView<PermintaanController> {
   }
 }
 
-/// Field Nominal menggunakan CTextField
-/// keyboardType & inputFormatters sepenuhnya dari controller getter
 class _NominalField extends GetView<PermintaanController> {
   const _NominalField();
 
@@ -262,7 +202,6 @@ class _NominalField extends GetView<PermintaanController> {
   }
 }
 
-/// Field Keterangan menggunakan CTextField dengan maxLines
 class _KeteranganField extends GetView<PermintaanController> {
   const _KeteranganField();
 
@@ -270,14 +209,12 @@ class _KeteranganField extends GetView<PermintaanController> {
   Widget build(BuildContext context) {
     return CTextField(
       controller: controller.keteranganController,
-      hintText:   '',
-      maxLines:   5,
+      hintText: '',
+      maxLines: 5,
     );
   }
 }
 
-/// Tombol Kirim menggunakan CButton
-/// Teks, warna, dan callback sepenuhnya dari controller getter
 class _SubmitButton extends GetView<PermintaanController> {
   const _SubmitButton();
 
@@ -285,11 +222,11 @@ class _SubmitButton extends GetView<PermintaanController> {
   Widget build(BuildContext context) {
     return Obx(
       () => CButton(
-        text:        controller.submitButtonText,
-        onPressed:   controller.submitButtonCallback,
-        color:       controller.submitButtonColor,
-        fontSize:    16,
-        fontWeight:  FontWeight.w600,
+        text:         controller.submitButtonText,
+        onPressed:    controller.submitButtonCallback,
+        color:        controller.submitButtonColor,
+        fontSize:     16,
+        fontWeight:   FontWeight.w600,
         borderRadius: 8,
       ),
     );
