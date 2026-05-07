@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
+import 'package:haycrew_app/controllers/home_controller.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
 
 class ProfilMenuItem {
@@ -22,13 +23,20 @@ class ProfilMenuItem {
 }
 
 class ProfilController extends GetxController {
-  // ─── User Data ────────────────────────────────────────────────────────────
-  final userName = 'Haerudin'.obs;
-  final userRole = 'Senior Agricultural Specialist'.obs;
+  // ─── User Data — diambil dari HomeController ──────────────────────────────
+  // ProfilPage ada di dalam shell yang sama, jadi HomeController pasti tersedia.
+  // Tidak perlu duplikasi state; cukup baca dari HomeController.
+  HomeController get _homeCtrl => Get.find<HomeController>();
+
+  RxString get userRole => _homeCtrl.userRole;
+  RxString get userName => _homeCtrl.userName;
+
+
+  // Data khusus profil yang tidak ada di HomeController
   final joinDate = 'Karyawan sejak 12-02-2023'.obs;
   final isActive = true.obs;
 
-  // ─── Computed Getters — semua pakai AppColors ─────────────────────────────
+  // ─── Computed Getters ─────────────────────────────────────────────────────
 
   String get statusLabel   => isActive.value ? 'Aktif' : 'Nonaktif';
   Color  get statusColor   => isActive.value ? AppColors.primaryGreen : AppColors.red;
@@ -82,25 +90,6 @@ class ProfilController extends GetxController {
         ),
       ];
 
-  // ─── Lifecycle ────────────────────────────────────────────────────────────
-
-  @override
-  void onInit() {
-    super.onInit();
-
-    // Ambil data user dari arguments
-    final args = Get.arguments as Map<String, dynamic>?;
-    if (args != null) {
-      if (args['userName'] != null) userName.value = args['userName'];
-      if (args['userRole'] != null) userRole.value = args['userRole'];
-    }
-
-    // Sync highlight navbar ke index 2 (Profil)
-    // NavbarController sudah ada karena di-register permanent di HomeBinding
-
-  }
-
-
   // ─── Actions ──────────────────────────────────────────────────────────────
 
   void onTapInformasiPribadi() => _showComingSoon('Informasi Pribadi');
@@ -136,7 +125,9 @@ class ProfilController extends GetxController {
 
   void _doLogout() {
     Get.back();
-    // TODO: hapus session / token
+    // TODO: Hapus token dari SharedPreferences
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.clear();
     Get.offAllNamed(AppRoutes.LOGIN);
   }
 

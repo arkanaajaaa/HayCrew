@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/controllers/CKandang/laporancontroller.dart';
 import 'package:haycrew_app/components/CTextfield.dart';
-import 'package:haycrew_app/components/CButton.dart'; // Import CButton
+import 'package:haycrew_app/components/CButton.dart';
+import 'package:haycrew_app/components/CAppBar.dart';           // ← reusable
+import 'package:haycrew_app/components/CDateRangePicker.dart';  // ← reusable
 import '../../../constants/app_colors.dart';
 
 class LaporanPage extends GetView<LaporanController> {
@@ -11,60 +13,20 @@ class LaporanPage extends GetView<LaporanController> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Laporan Kandang',
-          style: TextStyle(
-            color: AppColors.primaryGreen,
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primaryGreen),
-          onPressed: () => Get.back(),
-        ),
-        centerTitle: true,
-      ),
+      appBar: const CAppBar(title: 'Laporan Kandang'), // ← CAppBar
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Date Range Picker
-              GestureDetector(
-                onTap: controller.selectDateRange,
-                child: Obx(
-                  () => Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.textFieldBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 15,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          controller.formattedDateRange.value,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                        const Icon(
-                          Icons.calendar_today,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ],
-                    ),
-                  ),
+              // Date Range Picker — menggunakan CDateRangePicker
+              Obx(
+                () => CDateRangePicker(
+                  displayText: controller.formattedDateRange.value,
+                  onTap: controller.selectDateRange,
                 ),
               ),
               const SizedBox(height: 15),
@@ -101,10 +63,7 @@ class LaporanPage extends GetView<LaporanController> {
               ),
               const SizedBox(height: 10),
 
-              Text(
-                'Rata-rata bobot minggu ini*',
-                style: theme.textTheme.bodyMedium,
-              ),
+              Text('Rata-rata bobot minggu ini*', style: theme.textTheme.bodyMedium),
               Row(
                 children: [
                   Expanded(
@@ -124,6 +83,7 @@ class LaporanPage extends GetView<LaporanController> {
               CTextField(
                 controller: controller.catatanController,
                 hintText: 'Tulis catatan di sini...',
+                maxLines: 4,
               ),
               const SizedBox(height: 18),
 
@@ -151,9 +111,9 @@ class LaporanPage extends GetView<LaporanController> {
                               width: double.infinity,
                             ),
                           )
-                        : Column(
+                        : const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
+                            children: [
                               Icon(
                                 Icons.cloud_upload,
                                 color: AppColors.primaryGreen,
@@ -176,16 +136,15 @@ class LaporanPage extends GetView<LaporanController> {
               ),
               const SizedBox(height: 32),
 
-              // Tombol Simpan & Kirim menggunakan CButton yang sudah diupdate
               CButton(
                 text: 'Simpan & Kirim',
-                fontWeight: FontWeight.bold, // Menggunakan properti baru
+                fontWeight: FontWeight.bold,
                 fontSize: 16,
-                borderRadius: 8, // Menyesuaikan dengan radius input field di atas
+                borderRadius: 8,
                 color: AppColors.primaryGreen,
                 onPressed: controller.submit,
               ),
-              const SizedBox(height: 20), // Tambahan space bawah agar tidak terlalu mepet
+              const SizedBox(height: 20),
             ],
           ),
         ),

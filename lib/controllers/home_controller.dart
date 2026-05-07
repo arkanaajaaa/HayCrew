@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/status_permintaan_model.dart';
 import '../services/google_calender_service.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class HomeController extends GetxController {
   final GoogleCalendarService _calendarService = GoogleCalendarService();
@@ -13,23 +11,29 @@ class HomeController extends GetxController {
   final RxBool isLoading           = false.obs;
   final RxBool isCalendarConnected = false.obs;
 
-  var userName = 'User'.obs;
-  var userRole = 'Karyawan'.obs;
-  var userId;
+  // ─── User Data — semua Rx agar UI selalu sync ─────────────────────────────
+  final userName = 'User'.obs;
+  final userRole = 'Karyawan'.obs;
+  final userId   = ''.obs; // Rx<String> bukan dynamic
+
+  // ─── Lifecycle ────────────────────────────────────────────────────────────
 
   @override
-void onInit() {
-  super.onInit();
-  final args = Get.arguments as Map<String, dynamic>?;
-  
-  // Gunakan .value untuk mengupdate nilai variabel observable
-  userName.value = args?['userName'] ?? 'User';
-  userRole.value = args?['userRole'] ?? 'Karyawan';
-  
-  userId = args?['userId'];
-  loadStatusPermintaan();
-  checkCalendarConnection();
-}
+  void onInit() {
+    super.onInit();
+    _loadArgs();
+    loadStatusPermintaan();
+    checkCalendarConnection();
+  }
+
+  void _loadArgs() {
+    final args = Get.arguments as Map<String, dynamic>?;
+    if (args == null) return;
+    userName.value = args['userName'] ?? 'User';
+    userRole.value = args['userRole'] ?? 'Karyawan';
+    userId.value   = args['userId']   ?? '';
+  }
+
   // ─── Service & Data ───────────────────────────────────────────────────────
 
   Future<void> checkCalendarConnection() async {
@@ -41,7 +45,12 @@ void onInit() {
       isLoading.value = true;
       await Future.delayed(const Duration(seconds: 1));
 
-      // TODO: Ganti dengan actual API call
+      // TODO: Ganti dengan actual API call menggunakan userId.value
+      // final response = await http.get(
+      //   Uri.parse('YOUR_API_URL/permintaan?userId=${userId.value}'),
+      //   headers: {'Authorization': 'Bearer $token'},
+      // );
+
       final mockData = [
         {
           'id': '1', 'day': 11, 'month': 'Jan',
