@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
-import 'package:haycrew_app/controllers/home_controller.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
 
 class ProfilMenuItem {
@@ -23,75 +22,89 @@ class ProfilMenuItem {
 }
 
 class ProfilController extends GetxController {
-  // ─── User Data — diambil dari HomeController ──────────────────────────────
-  // ProfilPage ada di dalam shell yang sama, jadi HomeController pasti tersedia.
-  // Tidak perlu duplikasi state; cukup baca dari HomeController.
-  HomeController get _homeCtrl => Get.find<HomeController>();
 
-  RxString get userRole => _homeCtrl.userRole;
-  RxString get userName => _homeCtrl.userName;
+  // ─── Static precomputed colors ────────────────────────────────────────────
+  static final _activeBgColor   = AppColors.lightGreen.withOpacity(0.15);
+  static final _inactiveBgColor = AppColors.red.withOpacity(0.1);
+  static final _logoutBgColor   = AppColors.red.withOpacity(0.1);
 
+  // ─── User Data — mandiri, tidak bergantung HomeController ─────────────────
+  final userName = 'User'.obs;
+  final userRole = 'Karyawan'.obs;
 
-  // Data khusus profil yang tidak ada di HomeController
   final joinDate = 'Karyawan sejak 12-02-2023'.obs;
   final isActive = true.obs;
 
-  // ─── Computed Getters ─────────────────────────────────────────────────────
+  late final List<ProfilMenuItem> menuItems;
 
+  @override
+  void onInit() {
+    super.onInit();
+    _loadArgs();
+    menuItems = _buildMenuItems();
+  }
+
+  void _loadArgs() {
+    final args = Get.arguments as Map<String, dynamic>?;
+    if (args != null) {
+      userName.value = args['userName'] ?? 'User';
+      userRole.value = args['userRole'] ?? 'Karyawan';
+    }
+  }
+
+  // ─── Computed ─────────────────────────────────────────────────────────────
   String get statusLabel   => isActive.value ? 'Aktif' : 'Nonaktif';
   Color  get statusColor   => isActive.value ? AppColors.primaryGreen : AppColors.red;
-  Color  get statusBgColor => isActive.value
-      ? AppColors.lightGreen.withOpacity(0.15)
-      : AppColors.red.withOpacity(0.1);
+  Color  get statusBgColor => isActive.value ? _activeBgColor : _inactiveBgColor;
 
-  List<ProfilMenuItem> get menuItems => [
-        ProfilMenuItem(
-          icon:        Icons.person_outline,
-          iconBgColor: AppColors.calendarBackground,
-          iconColor:   AppColors.textDark,
-          title:       'Informasi Pribadi',
-          onTap:       onTapInformasiPribadi,
-        ),
-        ProfilMenuItem(
-          icon:        Icons.settings_outlined,
-          iconBgColor: AppColors.calendarBackground,
-          iconColor:   AppColors.textDark,
-          title:       'Pengaturan Akun',
-          onTap:       onTapPengaturanAkun,
-        ),
-        ProfilMenuItem(
-          icon:        Icons.history,
-          iconBgColor: AppColors.calendarBackground,
-          iconColor:   AppColors.orange,
-          title:       'Riwayat Aktivitas',
-          onTap:       onTapRiwayatAktivitas,
-        ),
-        ProfilMenuItem(
-          icon:        Icons.security_outlined,
-          iconBgColor: AppColors.calendarBackground,
-          iconColor:   AppColors.lightGreen,
-          title:       'Keamanan',
-          onTap:       onTapKeamanan,
-        ),
-        ProfilMenuItem(
-          icon:        Icons.help_outline,
-          iconBgColor: AppColors.calendarBackground,
-          iconColor:   AppColors.primaryGreen,
-          title:       'Pusat Bantuan',
-          onTap:       onTapPusatBantuan,
-        ),
-        ProfilMenuItem(
-          icon:        Icons.logout,
-          iconBgColor: AppColors.red.withOpacity(0.1),
-          iconColor:   AppColors.red,
-          title:       'Keluar',
-          onTap:       onTapKeluar,
-          isDanger:    true,
-        ),
-      ];
+  // ─── Menu ─────────────────────────────────────────────────────────────────
+  List<ProfilMenuItem> _buildMenuItems() => [
+    ProfilMenuItem(
+      icon: Icons.person_outline,
+      iconBgColor: AppColors.calendarBackground,
+      iconColor: AppColors.textDark,
+      title: 'Informasi Pribadi',
+      onTap: onTapInformasiPribadi,
+    ),
+    ProfilMenuItem(
+      icon: Icons.settings_outlined,
+      iconBgColor: AppColors.calendarBackground,
+      iconColor: AppColors.textDark,
+      title: 'Pengaturan Akun',
+      onTap: onTapPengaturanAkun,
+    ),
+    ProfilMenuItem(
+      icon: Icons.history,
+      iconBgColor: AppColors.calendarBackground,
+      iconColor: AppColors.orange,
+      title: 'Riwayat Aktivitas',
+      onTap: onTapRiwayatAktivitas,
+    ),
+    ProfilMenuItem(
+      icon: Icons.security_outlined,
+      iconBgColor: AppColors.calendarBackground,
+      iconColor: AppColors.lightGreen,
+      title: 'Keamanan',
+      onTap: onTapKeamanan,
+    ),
+    ProfilMenuItem(
+      icon: Icons.help_outline,
+      iconBgColor: AppColors.calendarBackground,
+      iconColor: AppColors.primaryGreen,
+      title: 'Pusat Bantuan',
+      onTap: onTapPusatBantuan,
+    ),
+    ProfilMenuItem(
+      icon: Icons.logout,
+      iconBgColor: _logoutBgColor,
+      iconColor: AppColors.red,
+      title: 'Keluar',
+      onTap: onTapKeluar,
+      isDanger: true,
+    ),
+  ];
 
   // ─── Actions ──────────────────────────────────────────────────────────────
-
   void onTapInformasiPribadi() => _showComingSoon('Informasi Pribadi');
   void onTapPengaturanAkun()   => _showComingSoon('Pengaturan Akun');
   void onTapRiwayatAktivitas() => _showComingSoon('Riwayat Aktivitas');
@@ -121,24 +134,19 @@ class ProfilController extends GetxController {
     );
   }
 
-  // ─── Private ──────────────────────────────────────────────────────────────
-
   void _doLogout() {
     Get.back();
-    // TODO: Hapus token dari SharedPreferences
-    // final prefs = await SharedPreferences.getInstance();
-    // await prefs.clear();
     Get.offAllNamed(AppRoutes.LOGIN);
   }
 
   void _showComingSoon(String feature) {
     Get.snackbar(
       'Info', 'Fitur $feature akan segera tersedia',
-      snackPosition:   SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.blue[100],
-      colorText:       Colors.blue[900],
-      margin:          const EdgeInsets.all(15),
-      duration:        const Duration(seconds: 2),
+      colorText: Colors.blue[900],
+      margin: const EdgeInsets.all(15),
+      duration: const Duration(seconds: 2),
     );
   }
 }

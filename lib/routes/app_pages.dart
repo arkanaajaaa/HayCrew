@@ -20,7 +20,6 @@ class AppPages {
   static const INITIAL = AppRoutes.INITIAL;
 
   static final routes = [
-    // ─── Auth ───────────────────────────────────────────────────────────────
     GetPage(
       name: AppRoutes.LOGIN,
       page: () => const LoginPage(),
@@ -29,7 +28,6 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
     ),
 
-    // ─── Dashboard Kandang ──────────────────────────────────────────────────
     GetPage(
       name: AppRoutes.DASHBOARD_KANDANG,
       page: () => const MainShellPage(),
@@ -37,6 +35,7 @@ class AppPages {
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
     ),
+    
     GetPage(
       name: AppRoutes.LAPOR_KANDANG,
       page: () => const LaporanPage(),
@@ -48,7 +47,6 @@ class AppPages {
       binding: PermintaanBinding(),
     ),
 
-    // ─── Dashboard Storage ──────────────────────────────────────────────────
     GetPage(
       name: AppRoutes.DASHBOARD_STORAGE,
       page: () => const MainShellPageStorage(),
@@ -56,14 +54,6 @@ class AppPages {
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
     ),
-
-    // ─── Dashboard Reseller — belum dibuat ──────────────────────────────────
-    // GetPage(
-    //   name: AppRoutes.DASHBOARD_RESELLER,
-    //   page: () => const MainShellPageReseller(),
-    //   binding: ResellerBinding(),
-    //   transition: Transition.fadeIn,
-    // ),
   ];
 }
 

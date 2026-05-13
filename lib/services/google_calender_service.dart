@@ -1,10 +1,8 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/calendar/v3.dart' as cal;
-import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart' as http;
 import '../models/calender_event_model.dart';
 
-/// Service untuk integrasi dengan Google Calendar
 class GoogleCalendarService {
   static final GoogleCalendarService _instance = GoogleCalendarService._internal();
   factory GoogleCalendarService() => _instance;
@@ -35,20 +33,16 @@ class GoogleCalendarService {
     }
   }
 
-  /// Sign out dari Google
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     _currentUser = null;
     _calendarApi = null;
   }
 
-  /// Check apakah sudah signed in
   bool get isSignedIn => _currentUser != null;
 
-  /// Get current user
   GoogleSignInAccount? get currentUser => _currentUser;
 
-  /// Get events untuk tanggal tertentu
   Future<List<CalendarEventModel>> getEventsForDate(DateTime date) async {
     if (_calendarApi == null) return [];
 
@@ -71,7 +65,6 @@ class GoogleCalendarService {
     }
   }
 
-  /// Get events untuk range tanggal (misal seminggu)
   Future<Map<DateTime, List<CalendarEventModel>>> getEventsForWeek(DateTime startDate) async {
     if (_calendarApi == null) return {};
 
@@ -110,7 +103,6 @@ class GoogleCalendarService {
     }
   }
 
-  /// Create new event di Google Calendar
   Future<bool> createEvent({
     required String title,
     required DateTime startTime,
@@ -134,7 +126,6 @@ class GoogleCalendarService {
     }
   }
 
-  /// Update existing event
   Future<bool> updateEvent({
     required String eventId,
     String? title,
@@ -164,7 +155,6 @@ class GoogleCalendarService {
     }
   }
 
-  /// Delete event
   Future<bool> deleteEvent(String eventId) async {
     if (_calendarApi == null) return false;
 
@@ -178,7 +168,6 @@ class GoogleCalendarService {
   }
 }
 
-/// HTTP Client untuk Google API
 class GoogleAuthClient extends http.BaseClient {
   final Map<String, String> _headers;
   final http.Client _client = http.Client();

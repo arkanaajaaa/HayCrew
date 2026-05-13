@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CButton.dart';
 import 'package:haycrew_app/components/CTextfield.dart';
-import 'package:haycrew_app/components/CAppBar.dart';           // ← reusable
-import 'package:haycrew_app/components/CDateRangePicker.dart';  // ← reusable
+import 'package:haycrew_app/components/CAppBar.dart';           
+import 'package:haycrew_app/components/CDateRangePicker.dart';  
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CKandang/permintaancontroller.dart';
 
@@ -62,10 +62,6 @@ class PermintaanKandangPage extends GetView<PermintaanController> {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PRIVATE WIDGET COMPONENTS (tidak berubah dari versi sebelumnya)
-// ═══════════════════════════════════════════════════════════════════════════════
 
 class _SectionLabel extends StatelessWidget {
   final String text;
@@ -222,9 +218,9 @@ class _SubmitButton extends GetView<PermintaanController> {
   Widget build(BuildContext context) {
     return Obx(
       () => CButton(
-        text:         controller.submitButtonText,
-        onPressed:    controller.submitButtonCallback,
-        color:        controller.submitButtonColor,
+        text:         controller.isLoading.value ? 'Mengirim...' : 'Kirim',
+        onPressed:    controller.isLoading.value ? null : () => controller.submit(),
+        color:        AppColors.primaryGreen,
         fontSize:     16,
         fontWeight:   FontWeight.w600,
         borderRadius: 8,

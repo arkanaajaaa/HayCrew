@@ -1,29 +1,30 @@
-import 'package:get/get.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../models/status_permintaan_model.dart';
-import '../services/google_calender_service.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:haycrew_app/constants/api_constant.dart';
+import 'package:haycrew_app/models/permintaan_model.dart';
+import 'package:http/http.dart' as http;
 import 'package:haycrew_app/routes/app_routes.dart';
+import '../models/status_permintaan_model.dart';
 
 class HomeController extends GetxController {
-  final GoogleCalendarService _calendarService = GoogleCalendarService();
+  final _storage = GetStorage();
+  String get _token => _storage.read('token') ?? '';
 
-  final RxList<StatusPermintaanModel> statusList = <StatusPermintaanModel>[].obs;
-  final RxBool isLoading           = false.obs;
-  final RxBool isCalendarConnected = false.obs;
+  final RxList<StatusPermintaanModel> statusList =
+      <StatusPermintaanModel>[].obs;
+  final RxBool isLoading = false.obs;
 
-  // ─── User Data — semua Rx agar UI selalu sync ─────────────────────────────
   final userName = 'User'.obs;
   final userRole = 'Karyawan'.obs;
-  final userId   = ''.obs; // Rx<String> bukan dynamic
-
-  // ─── Lifecycle ────────────────────────────────────────────────────────────
+  final userId = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
     _loadArgs();
     loadStatusPermintaan();
-    checkCalendarConnection();
   }
 
   void _loadArgs() {
@@ -31,47 +32,48 @@ class HomeController extends GetxController {
     if (args == null) return;
     userName.value = args['userName'] ?? 'User';
     userRole.value = args['userRole'] ?? 'Karyawan';
-    userId.value   = args['userId']   ?? '';
-  }
-
-  // ─── Service & Data ───────────────────────────────────────────────────────
-
-  Future<void> checkCalendarConnection() async {
-    isCalendarConnected.value = _calendarService.isSignedIn;
+    userId.value = args['userId'] ?? '';
   }
 
   Future<void> loadStatusPermintaan() async {
     try {
       isLoading.value = true;
-      await Future.delayed(const Duration(seconds: 1));
 
-      // TODO: Ganti dengan actual API call menggunakan userId.value
-      // final response = await http.get(
-      //   Uri.parse('YOUR_API_URL/permintaan?userId=${userId.value}'),
-      //   headers: {'Authorization': 'Bearer $token'},
-      // );
+      final response = await http
+          .get(
+            Uri.parse('${ApiConstant.baseUrl}/api/permintaan'),
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $_token',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
 
-      final mockData = [
-        {
-          'id': '1', 'day': 11, 'month': 'Jan',
-          'title': 'Dana pakan', 'status': 'accepted',
-          'description': 'Permintaan dana untuk pembelian pakan ayam',
-        },
-        {
-          'id': '2', 'day': 20, 'month': 'Jan',
-          'title': 'Beli sekam', 'status': 'pending',
-          'description': 'Permintaan pembelian sekam untuk kandang',
-        },
-        {
-          'id': '3', 'day': 28, 'month': 'Jan',
-          'title': 'Pintu kandang', 'status': 'rejected',
-          'description': 'Dana tidak mencukupi untuk perbaikan pintu',
-        },
-      ];
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final List data = body['data'] ?? [];
 
-      statusList.value = mockData
-          .map((data) => StatusPermintaanModel.fromJson(data))
-          .toList();
+        final permintaanList = data
+            .map((item) => PermintaanModel.fromJson(item))
+            .toList();
+
+        statusList.value = permintaanList
+            .map(
+              (item) => StatusPermintaanModel.fromJson({
+                'id': item.id.toString(),
+                'day': item.tanggal.day,
+                'month': _monthName(item.tanggal.month),
+                'title': item.namaPermintaan,
+                'status': _mapStatus(item.status),
+                'description': item.tipe == 'dana'
+                    ? 'Dana: Rp ${item.harga ?? 0}'
+                    : 'Barang: ${item.jumlah ?? 0} pcs',
+              }),
+            )
+            .toList();
+      } else {
+        Get.snackbar('Error', 'Gagal memuat data permintaan.');
+      }
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat data: $e');
     } finally {
@@ -81,18 +83,47 @@ class HomeController extends GetxController {
 
   Future<void> refreshData() async => await loadStatusPermintaan();
 
-  // ─── Routing ──────────────────────────────────────────────────────────────
+  String _monthName(int month) {
+    const months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    return months[month];
+  }
+
+  String _mapStatus(String status) {
+    switch (status) {
+      case 'disetujui':
+        return 'accepted';
+      case 'ditolak':
+        return 'rejected';
+      default:
+        return 'pending';
+    }
+  }
 
   void navigateToNotifications() {
     Get.snackbar(
-      'Info', 'Fitur Notifikasi akan segera tersedia',
-      snackPosition:   SnackPosition.BOTTOM,
+      'Info',
+      'Fitur Notifikasi akan segera tersedia',
+      snackPosition: SnackPosition.TOP,
       backgroundColor: Colors.blue[100],
-      margin:          const EdgeInsets.all(15),
+      margin: const EdgeInsets.all(15),
     );
   }
 
-  void navigateToLaporKandang()    => Get.toNamed(AppRoutes.LAPOR_KANDANG);
+  void navigateToLaporKandang() => Get.toNamed(AppRoutes.LAPOR_KANDANG);
   void navigateToKirimPermintaan() => Get.toNamed(AppRoutes.KIRIM_PERMINTAAN);
 
   void navigateToDetail(StatusPermintaanModel status) {
@@ -101,7 +132,7 @@ class HomeController extends GetxController {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: Text(status.title),
         content: Column(
-          mainAxisSize:       MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Status: ${status.status.toString().split('.').last}'),
@@ -109,9 +140,7 @@ class HomeController extends GetxController {
             Text(status.description ?? 'Tidak ada deskripsi'),
           ],
         ),
-        actions: [
-          TextButton(onPressed: Get.back, child: const Text('OK')),
-        ],
+        actions: [TextButton(onPressed: Get.back, child: const Text('OK'))],
       ),
     );
   }

@@ -60,10 +60,6 @@ class HomePageKandang extends StatelessWidget {
   }
 }
 
-/// Header bagian atas halaman beranda.
-/// Menampilkan salam + nama user + role + tombol notifikasi.
-/// Menggunakan Obx agar nama & role langsung update
-/// jika HomeController mengubah nilainya.
 class _HomeHeader extends StatelessWidget {
   final HomeController controller;
 
@@ -86,7 +82,6 @@ class _HomeHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Bagian kiri: salam + nama + role
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,8 +97,6 @@ class _HomeHeader extends StatelessWidget {
                     ),
                     Flexible(
                       child: Obx(
-                        // Obx memantau userName agar teks langsung
-                        // berubah tanpa perlu rebuild seluruh halaman
                         () => Text(
                           controller.userName.value,
                           style: const TextStyle(
@@ -131,7 +124,6 @@ class _HomeHeader extends StatelessWidget {
             ),
           ),
 
-          // Bagian kanan: tombol notifikasi
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -170,7 +162,6 @@ class _HomeActionButtons extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          // Tombol kiri — navigasi ke LaporanPage
           Expanded(
             child: CButton(
               text: 'Lapor Kandang',
@@ -182,7 +173,6 @@ class _HomeActionButtons extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Tombol kanan — navigasi ke PermintaanPage
           Expanded(
             child: CButton(
               text: 'Kirim Permintaan',
@@ -199,12 +189,6 @@ class _HomeActionButtons extends StatelessWidget {
   }
 }
 
-/// Daftar kartu status permintaan.
-/// Menggunakan StatusCardWidget dari components/status_card_widget.dart.
-///
-/// Obx di sini memantau dua observable dari HomeController:
-/// - isLoading  → tampilkan CircularProgressIndicator
-/// - statusList → tampilkan daftar kartu atau pesan kosong
 class _HomeStatusList extends StatelessWidget {
   final HomeController controller;
 
@@ -213,7 +197,6 @@ class _HomeStatusList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // State 1: sedang loading data dari API
       if (controller.isLoading.value) {
         return const Center(
           child: Padding(
@@ -225,7 +208,6 @@ class _HomeStatusList extends StatelessWidget {
         );
       }
 
-      // State 2: data kosong (belum ada permintaan)
       if (controller.statusList.isEmpty) {
         return Center(
           child: Padding(
@@ -252,9 +234,6 @@ class _HomeStatusList extends StatelessWidget {
         );
       }
 
-      // State 3: ada data — tampilkan daftar StatusCardWidget
-      // StatusCardWidget sudah reusable dari components/status_card_widget.dart
-      // onTap memanggil navigateToDetail yang menampilkan AlertDialog
       return Column(
         children: controller.statusList.map((status) {
           return StatusCardWidget(

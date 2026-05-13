@@ -1,26 +1,28 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 
 enum JenisPermintaan { barang, dana }
 
 class PermintaanController extends GetxController {
-  // ─── TextEditingControllers ──────────────────────────────────────────────────
+  static const String baseUrl = 'http://10.10.10.152:8000';
+
+  final _storage = GetStorage();
+  String get _token => _storage.read('token') ?? '';
+
   final keperluanController = TextEditingController();
   final nominalController = TextEditingController();
   final keteranganController = TextEditingController();
 
-  // ─── Observable State ────────────────────────────────────────────────────────
   final dateRange = Rxn<DateTimeRange>();
   final formattedDateRange = 'Pilih Tanggal'.obs;
   final jenisPermintaan = JenisPermintaan.dana.obs;
   final isLoading = false.obs;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // COMPUTED GETTERS — UI tinggal bind, tidak perlu tahu kondisi apapun
-  // ═══════════════════════════════════════════════════════════════════════════
 
   String get nominalLabel => jenisPermintaan.value == JenisPermintaan.dana
       ? 'Nominal*'
@@ -41,20 +43,12 @@ class PermintaanController extends GetxController {
       : null;
 
   String get submitButtonText => isLoading.value ? 'Mengirim...' : 'Kirim';
-
-  VoidCallback get submitButtonCallback => isLoading.value ? () {} : submit;
-
-  /// Warna tombol submit — redup saat loading
   Color get submitButtonColor => isLoading.value
       ? AppColors.primaryGreen.withOpacity(0.6)
       : AppColors.primaryGreen;
 
   bool get isBarangSelected => jenisPermintaan.value == JenisPermintaan.barang;
   bool get isDanaSelected => jenisPermintaan.value == JenisPermintaan.dana;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ACTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   void onTapDatePicker() async {
     final picked = await showDateRangePicker(
@@ -91,65 +85,84 @@ class PermintaanController extends GetxController {
   Future<void> submit() async {
     if (!_validate()) return;
 
+    isLoading.value = true;
+
     try {
-      isLoading.value = true;
+      final tipe = jenisPermintaan.value == JenisPermintaan.dana
+          ? 'dana'
+          : 'barang';
 
-      await Future.delayed(const Duration(seconds: 2));
+      final Map<String, String> body = {
+        'nama_permintaan': keperluanController.text.trim(),
+        'tipe': tipe,
+        'tanggal': DateFormat('yyyy-MM-dd').format(dateRange.value!.start),
+      };
 
-      // TODO: Ganti dengan actual API call
-      // await http.post(
-      //   Uri.parse('YOUR_API_URL/permintaan'),
-      //   headers: {'Content-Type': 'application/json'},
-      //   body: jsonEncode({
-      //     'jenis'          : jenisPermintaan.value.name,
-      //     'keperluan'      : keperluanController.text.trim(),
-      //     'nominal'        : nominalController.text.trim(),
-      //     'keterangan'     : keteranganController.text.trim(),
-      //     'tanggal_mulai'  : dateRange.value!.start.toIso8601String(),
-      //     'tanggal_selesai': dateRange.value!.end.toIso8601String(),
-      //   }),
-      // );
+      if (tipe == 'dana') {
+        body['harga'] = nominalController.text.trim();
+      } else {
+        body['jumlah'] = nominalController.text.trim();
+      }
 
+      if (keteranganController.text.trim().isNotEmpty) {
+        body['keterangan'] = keteranganController.text.trim();
+      }
+
+      debugPrint('Body: $body');
+      debugPrint('Token: $_token');
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/permintaan'),
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $_token',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 15));
+
+      debugPrint('Status: ${response.statusCode}');
+      debugPrint('Response: ${response.body}');
+
+      final responseBody = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.snackbar(
+          'Berhasil',
+          'Permintaan berhasil dikirim.',
+          backgroundColor: Colors.green[100],
+          colorText: Colors.green[900],
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(12),
+          duration: const Duration(seconds: 3),
+        );
+        _resetForm();
+        Get.back();
+      } else {
+        _showError(responseBody['message'] ?? 'Gagal mengirim permintaan.');
+      }
+    } catch (e, stack) {
+      debugPrint('ERROR: $e');
+      debugPrint('STACK: $stack');
+      _showError('Gagal mengirim permintaan: $e');
+    } finally {
       isLoading.value = false;
-
-      Get.snackbar(
-        'Berhasil',
-        'Permintaan berhasil dikirim.',
-        backgroundColor: Colors.green[100],
-        colorText: Colors.green[900],
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
-        duration: const Duration(seconds: 3),
-      );
-
-      _resetForm();
-      Get.back();
-    } catch (e) {
-      isLoading.value = false;
-      Get.snackbar(
-        'Error',
-        'Gagal mengirim permintaan: $e',
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
-      );
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PRIVATE HELPERS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   bool _validate() {
-    if (dateRange.value == null)
+    if (dateRange.value == null) {
       return _showError('Mohon pilih tanggal terlebih dahulu.');
-    if (keperluanController.text.trim().isEmpty)
+    }
+    if (keperluanController.text.trim().isEmpty) {
       return _showError('Keperluan tidak boleh kosong.');
-    if (nominalController.text.trim().isEmpty)
+    }
+    if (nominalController.text.trim().isEmpty) {
       return _showError(
         '${nominalLabel.replaceAll('*', '')} tidak boleh kosong.',
       );
+    }
     return true;
   }
 
@@ -173,10 +186,6 @@ class PermintaanController extends GetxController {
     formattedDateRange.value = 'Pilih Tanggal';
     jenisPermintaan.value = JenisPermintaan.dana;
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // LIFECYCLE
-  // ═══════════════════════════════════════════════════════════════════════════
 
   @override
   void onClose() {
