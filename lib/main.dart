@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'routes/app_pages.dart';
 import 'constants/app_colors.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'; // Pastikan ini tetap ada
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
-  // Initialize locale data untuk Bahasa Indonesia
   WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
   await initializeDateFormatting('id_ID', null);
   
   runApp(const MyApp());
@@ -22,20 +23,16 @@ class MyApp extends StatelessWidget {
       title: 'HayCrew App',
       debugShowCheckedModeBanner: false,
       
-      // --- TAMBAHKAN KONFIGURASI LOKALISASI DI SINI ---
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('id', 'ID'), // Bahasa Indonesia
-        Locale('en', 'US'), // English (Backup)
+        Locale('id', 'ID'), 
+        Locale('en', 'US'), 
       ],
-      locale: const Locale('id', 'ID'), // Memaksa aplikasi menggunakan format Indonesia
-      // -----------------------------------------------
-
-      // Theme Configuration
+      locale: const Locale('id', 'ID'), 
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryGreen,
@@ -59,11 +56,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
       
-      // Routes Configuration dengan GetX
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
       
-      // Default Transition
       defaultTransition: Transition.cupertino,
       transitionDuration: const Duration(milliseconds: 300),
     );

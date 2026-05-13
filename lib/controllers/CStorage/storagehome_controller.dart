@@ -10,7 +10,7 @@ class StokItemModel {
   final String nama;
   final int jumlah;
   final String satuan;
-  final String status; // 'aman' | 'menipis' | 'habis'
+  final String status;
 
   const StokItemModel({
     required this.id,
@@ -22,8 +22,8 @@ class StokItemModel {
 
   factory StokItemModel.fromJson(Map<String, dynamic> json) {
     return StokItemModel(
-      id    : json['id']?.toString() ?? '',
-      nama  : json['nama'] ?? '',
+      id: json['id']?.toString() ?? '',
+      nama: json['nama'] ?? '',
       jumlah: json['jumlah'] ?? 0,
       satuan: json['satuan'] ?? '',
       status: json['status'] ?? 'aman',
@@ -32,22 +32,17 @@ class StokItemModel {
 }
 
 class StorageHomeController extends GetxController {
-  // ─── User Data ────────────────────────────────────────────────────────────
   final userName = 'User'.obs;
   final userRole = 'Karyawan Storage'.obs;
-  final userId   = ''.obs;
+  final userId = ''.obs;
 
-  // ─── State ────────────────────────────────────────────────────────────────
   final RxList<StokItemModel> stokList = <StokItemModel>[].obs;
   final isLoading = false.obs;
 
-  // ─── Summary stats (dihitung dari stokList) ───────────────────────────────
-  int get totalItem   => stokList.length;
-  int get itemAman    => stokList.where((s) => s.status == 'aman').length;
+  int get totalItem => stokList.length;
+  int get itemAman => stokList.where((s) => s.status == 'aman').length;
   int get itemMenipis => stokList.where((s) => s.status == 'menipis').length;
-  int get itemHabis   => stokList.where((s) => s.status == 'habis').length;
-
-  // ─── Lifecycle ────────────────────────────────────────────────────────────
+  int get itemHabis => stokList.where((s) => s.status == 'habis').length;
 
   @override
   void onInit() {
@@ -61,28 +56,50 @@ class StorageHomeController extends GetxController {
     if (args == null) return;
     userName.value = args['userName'] ?? 'User';
     userRole.value = args['userRole'] ?? 'Karyawan Storage';
-    userId.value   = args['userId']   ?? '';
+    userId.value = args['userId'] ?? '';
   }
-
-  // ─── Data ─────────────────────────────────────────────────────────────────
 
   Future<void> loadStok() async {
     try {
       isLoading.value = true;
       await Future.delayed(const Duration(seconds: 1));
 
-      // TODO: Ganti dengan actual API call
-      // final response = await http.get(
-      //   Uri.parse('YOUR_API/storage/stok?userId=${userId.value}'),
-      //   headers: {'Authorization': 'Bearer $token'},
-      // );
-
       final mockData = [
-        {'id': '1', 'nama': 'Pakan Ayam',    'jumlah': 150, 'satuan': 'kg',   'status': 'aman'},
-        {'id': '2', 'nama': 'Sekam',         'jumlah': 20,  'satuan': 'karung','status': 'menipis'},
-        {'id': '3', 'nama': 'Vitamin Ternak','jumlah': 0,   'satuan': 'botol','status': 'habis'},
-        {'id': '4', 'nama': 'Obat Semprot',  'jumlah': 8,   'satuan': 'liter','status': 'aman'},
-        {'id': '5', 'nama': 'Tali Rafia',    'jumlah': 3,   'satuan': 'gulung','status': 'menipis'},
+        {
+          'id': '1',
+          'nama': 'Pakan Ayam',
+          'jumlah': 150,
+          'satuan': 'kg',
+          'status': 'aman',
+        },
+        {
+          'id': '2',
+          'nama': 'Sekam',
+          'jumlah': 20,
+          'satuan': 'karung',
+          'status': 'menipis',
+        },
+        {
+          'id': '3',
+          'nama': 'Vitamin Ternak',
+          'jumlah': 0,
+          'satuan': 'botol',
+          'status': 'habis',
+        },
+        {
+          'id': '4',
+          'nama': 'Obat Semprot',
+          'jumlah': 8,
+          'satuan': 'liter',
+          'status': 'aman',
+        },
+        {
+          'id': '5',
+          'nama': 'Tali Rafia',
+          'jumlah': 3,
+          'satuan': 'gulung',
+          'status': 'menipis',
+        },
       ];
 
       stokList.value = mockData.map((d) => StokItemModel.fromJson(d)).toList();
@@ -95,27 +112,41 @@ class StorageHomeController extends GetxController {
 
   Future<void> refreshData() async => await loadStok();
 
-  // ─── Routing ──────────────────────────────────────────────────────────────
-
   void navigateToNotifications() {
-    Get.snackbar('Info', 'Fitur Notifikasi akan segera tersedia',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue[100],
-        margin: const EdgeInsets.all(15));
+    Get.snackbar(
+      'Info',
+      'Fitur Notifikasi akan segera tersedia',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.blue[100],
+      margin: const EdgeInsets.all(15),
+    );
   }
 
   void navigateToTambahStok() {
-    Get.snackbar('Info', 'Fitur Tambah Stok akan segera tersedia',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue[100],
-        margin: const EdgeInsets.all(15));
+    Get.snackbar(
+      'Info',
+      'Fitur Tambah Stok akan segera tersedia',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.blue[100],
+      margin: const EdgeInsets.all(15),
+    );
   }
 
   void navigateToLaporanStok() {
-    Get.snackbar('Info', 'Fitur Laporan Stok akan segera tersedia',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue[100],
-        margin: const EdgeInsets.all(15));
+    Get.snackbar(
+      'Info',
+      'Fitur Laporan Stok akan segera tersedia',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.blue[100],
+      margin: const EdgeInsets.all(15),
+    );
+  }
+
+  void navigateToProfil() {
+    Get.toNamed(
+      AppRoutes.PROFIL,
+      arguments: {'userName': userName.value, 'userRole': userRole.value},
+    );
   }
 
   void navigateToDetail(StokItemModel item) {
@@ -132,19 +163,21 @@ class StorageHomeController extends GetxController {
             Text('Status : ${_statusLabel(item.status)}'),
           ],
         ),
-        actions: [
-          TextButton(onPressed: Get.back, child: const Text('OK')),
-        ],
+        actions: [TextButton(onPressed: Get.back, child: const Text('OK'))],
       ),
     );
   }
 
   String _statusLabel(String status) {
     switch (status) {
-      case 'aman':    return '✅ Aman';
-      case 'menipis': return '⚠️ Menipis';
-      case 'habis':   return '❌ Habis';
-      default:        return status;
+      case 'aman':
+        return '✅ Aman';
+      case 'menipis':
+        return '⚠️ Menipis';
+      case 'habis':
+        return '❌ Habis';
+      default:
+        return status;
     }
   }
 }

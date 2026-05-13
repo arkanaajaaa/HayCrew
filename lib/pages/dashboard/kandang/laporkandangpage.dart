@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:haycrew_app/controllers/CKandang/laporancontroller.dart';
 import 'package:haycrew_app/components/CTextfield.dart';
 import 'package:haycrew_app/components/CButton.dart';
-import 'package:haycrew_app/components/CAppBar.dart';           // ← reusable
-import 'package:haycrew_app/components/CDateRangePicker.dart';  // ← reusable
+import 'package:haycrew_app/components/CAppBar.dart';
+import 'package:haycrew_app/components/CDateRangePicker.dart';
 import '../../../constants/app_colors.dart';
 
 class LaporanPage extends GetView<LaporanController> {
@@ -15,14 +15,13 @@ class LaporanPage extends GetView<LaporanController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: const CAppBar(title: 'Laporan Kandang'), // ← CAppBar
+      appBar: const CAppBar(title: 'Laporan Kandang'),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Date Range Picker — menggunakan CDateRangePicker
               Obx(
                 () => CDateRangePicker(
                   displayText: controller.formattedDateRange.value,
@@ -31,12 +30,12 @@ class LaporanPage extends GetView<LaporanController> {
               ),
               const SizedBox(height: 15),
 
-              Text('Jumlah kematian*', style: theme.textTheme.bodyMedium),
+              Text('Jumlah Ayam Awal*', style: theme.textTheme.bodyMedium),
               Row(
                 children: [
                   Expanded(
                     child: CTextField(
-                      controller: controller.jumlahKematianController,
+                      controller: controller.jumlahAyamAwalController,
                       hintText: '0',
                       keyboardType: TextInputType.number,
                     ),
@@ -47,12 +46,28 @@ class LaporanPage extends GetView<LaporanController> {
               ),
               const SizedBox(height: 10),
 
-              Text('Usia Ternak*', style: theme.textTheme.bodyMedium),
+              Text('Jumlah Ayam Mati*', style: theme.textTheme.bodyMedium),
               Row(
                 children: [
                   Expanded(
                     child: CTextField(
-                      controller: controller.usiaTernakController,
+                      controller: controller.jumlahAyamMatiController,
+                      hintText: '0',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('ekor'),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              Text('Umur Ayam*', style: theme.textTheme.bodyMedium),
+              Row(
+                children: [
+                  Expanded(
+                    child: CTextField(
+                      controller: controller.umurAyamController,
                       hintText: 'Contoh : 70',
                       keyboardType: TextInputType.number,
                     ),
@@ -63,13 +78,16 @@ class LaporanPage extends GetView<LaporanController> {
               ),
               const SizedBox(height: 10),
 
-              Text('Rata-rata bobot minggu ini*', style: theme.textTheme.bodyMedium),
+              Text(
+                'Rata-rata Bobot Minggu Ini*',
+                style: theme.textTheme.bodyMedium,
+              ),
               Row(
                 children: [
                   Expanded(
                     child: CTextField(
                       controller: controller.rataBobotController,
-                      hintText: '',
+                      hintText: '0',
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -87,7 +105,6 @@ class LaporanPage extends GetView<LaporanController> {
               ),
               const SizedBox(height: 18),
 
-              // Upload Gambar
               GestureDetector(
                 onTap: controller.pickImage,
                 child: Container(
@@ -121,7 +138,7 @@ class LaporanPage extends GetView<LaporanController> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                'Unggah Gambar',
+                                'Unggah Foto',
                                 style: TextStyle(color: AppColors.primaryGreen),
                               ),
                               SizedBox(height: 2),
@@ -136,13 +153,19 @@ class LaporanPage extends GetView<LaporanController> {
               ),
               const SizedBox(height: 32),
 
-              CButton(
-                text: 'Simpan & Kirim',
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                borderRadius: 8,
-                color: AppColors.primaryGreen,
-                onPressed: controller.submit,
+              Obx(
+                () => CButton(
+                  text: controller.isLoading.value
+                      ? 'Menyimpan...'
+                      : 'Simpan & Kirim',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  borderRadius: 8,
+                  color: AppColors.primaryGreen,
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () => controller.submit(),
+                ),
               ),
               const SizedBox(height: 20),
             ],

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color color;
   final Color textColor;
   final double borderRadius;

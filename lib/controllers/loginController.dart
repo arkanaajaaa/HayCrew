@@ -1,16 +1,21 @@
-/// lib/controllers/loginController.dart
-
-import 'package:get/get.dart';
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 import '../routes/app_routes.dart';
-import '../services/mock_auth_service.dart';
 
 class LoginController extends GetxController {
-  final emailController    = TextEditingController();
+  static const String baseUrl = 'http://10.10.10.245:8000';
+
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  final isLoading       = false.obs;
+  final isLoading = false.obs;
   final obscurePassword = true.obs;
+
+  final _storage = GetStorage();
 
   @override
   void onClose() {
@@ -22,8 +27,6 @@ class LoginController extends GetxController {
   void togglePasswordVisibility() {
     obscurePassword.value = !obscurePassword.value;
   }
-
-  // ─── Validasi input sebelum kirim ─────────────────────────────────────────
 
   bool _validateInput() {
     if (emailController.text.trim().isEmpty) {
@@ -41,292 +44,119 @@ class LoginController extends GetxController {
     return true;
   }
 
-  // ─── Handle Login ─────────────────────────────────────────────────────────
-
   Future<void> handleLogin() async {
     if (!_validateInput()) return;
 
+    isLoading.value = true;
+
     try {
-      isLoading.value = true;
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/login'),
+            headers: {'Accept': 'application/json'},
+            body: {
+              'email': emailController.text.trim(),
+              'password': passwordController.text,
+            },
+          )
+          .timeout(const Duration(seconds: 15));
 
-      // ── Panggil MockAuthService (ganti dengan HTTP call saat production) ──
-      // Saat production, ganti baris ini dengan:
-      //
-      // final response = await http.post(
-      //   Uri.parse('https://api.haycrew.com/auth/login'),
-      //   headers: {'Content-Type': 'application/json'},
-      //   body: jsonEncode({
-      //     'email'   : emailController.text.trim(),
-      //     'password': passwordController.text,
-      //   }),
-      // );
-      // if (response.statusCode != 200) { ... handle error ... }
-      // final body     = jsonDecode(response.body);
-      // final role     = body['data']['role'];
-      // final name     = body['data']['name'];
-      // final userId   = body['data']['id'].toString();
-      // final token    = body['data']['token'];
-      // await _saveToken(token); // simpan ke SharedPreferences
-      //
-      // Lalu panggil _navigateByRole(role, name, role, userId)
-      // ────────────────────────────────────────────────────────────────────
+      final body = jsonDecode(response.body);
 
-      final user = await MockAuthService.login(
-        emailController.text.trim(),
-        passwordController.text,
-      );
+      if (response.statusCode == 200) {
+        _storage.write('token', body['access_token']); 
+        _storage.write('user', body['data']); 
 
-      isLoading.value = false;
+        final name = body['data']['name'] ?? 'User'; 
+        final role = body['data']['role'] ?? ''; 
 
-      if (user == null) {
-        _showError('Email atau password salah');
-        return;
-      }
+        Get.snackbar(
+          'Berhasil',
+          'Selamat datang, $name!',
+          backgroundColor: Colors.green[100],
+          colorText: Colors.green[900],
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+          duration: const Duration(seconds: 2),
+        );
 
-      Get.snackbar(
-        'Berhasil',
-        'Selamat datang, ${user.name}!',
-        backgroundColor: Colors.green[100],
-        colorText: Colors.green[900],
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(10),
-        duration: const Duration(seconds: 2),
-      );
-
-      _navigateByRole(user);
-
-    } catch (e) {
-      isLoading.value = false;
-      _showError('Login gagal: ${e.toString()}');
+        _navigateByRole(role: role, userName: name, userId: body['data']['id'].toString());
+    } else {
+      final message = body['message'] ?? 'Login gagal';
+      debugPrint('Login error: $message');
+      _showError(message);
     }
+  } on TimeoutException {
+    debugPrint('TIMEOUT');
+    _showError('Koneksi timeout. Pastikan server menyala dan IP benar.');
+  } catch (e) {
+    debugPrint('Exception: $e');
+    _showError('Login gagal: ${e.toString()}');
+  } finally {
+    isLoading.value = false;
+  }
   }
 
-  // ─── Role-based Navigation ────────────────────────────────────────────────
+  void _navigateByRole({
+    required String role,
+    required String userName,
+    required String userId,
+  }) {
+    final args = {'userName': userName, 'userRole': role, 'userId': userId};
 
-  /// Navigasi ke dashboard yang sesuai berdasarkan role user.
-  /// Saat backend sudah siap, [user] berasal dari response API, bukan mock.
-  void _navigateByRole(MockUser user) {
-    final args = {
-      'userName': user.name,
-      'userRole': user.role,
-      'userId'  : user.userId,
-    };
-
-    switch (user.role) {
+    switch (role.toLowerCase()) {
       case 'kandang':
         Get.offAllNamed(AppRoutes.DASHBOARD_KANDANG, arguments: args);
         break;
-      case 'storage':
+      case 'gudang':
         Get.offAllNamed(AppRoutes.DASHBOARD_STORAGE, arguments: args);
         break;
       case 'reseller':
-        // TODO: Uncomment saat DASHBOARD_RESELLER sudah dibuat
-        // Get.offAllNamed(AppRoutes.DASHBOARD_RESELLER, arguments: args);
         _showError('Dashboard Reseller belum tersedia');
         break;
+      case 'admin':
+        _showError('Dashboard Admin belum tersedia');
+        break;
       default:
-        _showError('Role tidak dikenali: ${user.role}');
+        _showError('Role tidak dikenali: $role');
     }
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
+  Future<void> handleLogout() async {
+    final token = _storage.read('token') ?? '';
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/api/logout'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+    } catch (_) {}
+    _storage.erase();
+    Get.offAllNamed(AppRoutes.LOGIN);
+  }
 
   void handleForgotPassword() {
-    Get.snackbar('Info', 'Fitur reset password akan segera tersedia',
-        backgroundColor: Colors.blue[100],
-        colorText: Colors.blue[900],
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(10));
+    Get.snackbar(
+      'Info',
+      'Fitur reset password akan segera tersedia',
+      backgroundColor: Colors.blue[100],
+      colorText: Colors.blue[900],
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(10),
+    );
   }
 
   bool _showError(String message) {
-    Get.snackbar('Error', message,
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(10));
+    Get.snackbar(
+      'Error',
+      message,
+      backgroundColor: Colors.red[100],
+      colorText: Colors.red[900],
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(10),
+    );
     return false;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import 'package:get/get.dart';
-// import 'package:flutter/material.dart';
-// import '../routes/app_routes.dart';
-
-// /// LoginController
-// /// Handles login state & navigasi berdasarkan role dari backend.
-// /// Saat backend sudah siap, ganti bagian TODO dengan actual API call.
-// class LoginController extends GetxController {
-//   // ─── Text Controllers ─────────────────────────────────────────────────────
-//   final emailController    = TextEditingController();
-//   final passwordController = TextEditingController();
-
-//   // ─── Observable State ─────────────────────────────────────────────────────
-//   final isLoading       = false.obs;
-//   final obscurePassword = true.obs;
-
-//   @override
-//   void onClose() {
-//     emailController.dispose();
-//     passwordController.dispose();
-//     super.onClose();
-//   }
-
-//   // ─── Actions ──────────────────────────────────────────────────────────────
-
-//   void togglePasswordVisibility() {
-//     obscurePassword.value = !obscurePassword.value;
-//   }
-
-//   bool validateInput() {
-//     if (emailController.text.trim().isEmpty) {
-//       return _showError('Email tidak boleh kosong');
-//     }
-//     if (!GetUtils.isEmail(emailController.text.trim())) {
-//       return _showError('Format email tidak valid');
-//     }
-//     if (passwordController.text.isEmpty) {
-//       return _showError('Password tidak boleh kosong');
-//     }
-//     if (passwordController.text.length < 6) {
-//       return _showError('Password minimal 6 karakter');
-//     }
-//     return true;
-//   }
-
-//   Future<void> handleLogin() async {
-//     if (!validateInput()) return;
-
-//     try {
-//       isLoading.value = true;
-
-//       // ── TODO: Ganti dengan actual API call ──────────────────────────────
-//       // final response = await http.post(
-//       //   Uri.parse('YOUR_API_URL/auth/login'),
-//       //   headers: {'Content-Type': 'application/json'},
-//       //   body: jsonEncode({
-//       //     'email'   : emailController.text.trim(),
-//       //     'password': passwordController.text,
-//       //   }),
-//       // );
-//       // final body = jsonDecode(response.body);
-//       // final role = body['data']['role'];       // 'kandang' | 'storage' | 'reseller'
-//       // final name = body['data']['name'];
-//       // final token = body['data']['token'];
-//       // await _saveToken(token); // simpan ke SharedPreferences
-//       // ────────────────────────────────────────────────────────────────────
-
-//       // Mock response — HAPUS setelah backend siap
-//       await Future.delayed(const Duration(seconds: 2));
-//       final email = emailController.text.trim();
-//       final mockRole = _mockRoleFromEmail(email); // hanya untuk development
-//       final mockName = email.split('@')[0].capitalize ?? 'User';
-
-//       isLoading.value = false;
-
-//       Get.snackbar(
-//         'Berhasil',
-//         'Selamat datang, $mockName!',
-//         backgroundColor: Colors.green[100],
-//         colorText: Colors.green[900],
-//         snackPosition: SnackPosition.TOP,
-//         margin: const EdgeInsets.all(10),
-//         duration: const Duration(seconds: 2),
-//       );
-
-//       _navigateByRole(
-//         role: mockRole,
-//         userName: mockName,
-//         userRole: mockRole,
-//         userId: 'user_001',
-//       );
-
-//     } catch (e) {
-//       isLoading.value = false;
-//       _showError('Login gagal: ${e.toString()}');
-//     }
-//   }
-
-//   // ─── Role-based Navigation ────────────────────────────────────────────────
-
-//   /// Navigasi ke dashboard yang sesuai berdasarkan role dari backend.
-//   /// [role] adalah string yang dikirim backend: 'kandang', 'storage', atau 'reseller'.
-//   void _navigateByRole({
-//     required String role,
-//     required String userName,
-//     required String userRole,
-//     required String userId,
-//   }) {
-//     final args = {
-//       'userName': userName,
-//       'userRole': userRole,
-//       'userId'  : userId,
-//     };
-
-//     switch (role.toLowerCase()) {
-//       case 'kandang':
-//         Get.offAllNamed(AppRoutes.DASHBOARD_KANDANG, arguments: args);
-//         break;
-//       case 'storage':
-//         // TODO: Uncomment saat DASHBOARD_STORAGE sudah dibuat
-//         // Get.offAllNamed(AppRoutes.DASHBOARD_STORAGE, arguments: args);
-//         _showComingSoon('Dashboard Storage');
-//         break;
-//       case 'reseller':
-//         // TODO: Uncomment saat DASHBOARD_RESELLER sudah dibuat
-//         // Get.offAllNamed(AppRoutes.DASHBOARD_RESELLER, arguments: args);
-//         _showComingSoon('Dashboard Reseller');
-//         break;
-//       default:
-//         _showError('Role tidak dikenali: $role');
-//     }
-//   }
-
-//   // ─── Helpers ──────────────────────────────────────────────────────────────
-
-//   void handleForgotPassword() => _showComingSoon('Reset Password');
-//   void handleRegister()       => _showComingSoon('Registrasi');
-
-//   bool _showError(String message) {
-//     Get.snackbar(
-//       'Error', message,
-//       backgroundColor: Colors.red[100],
-//       colorText: Colors.red[900],
-//       snackPosition: SnackPosition.TOP,
-//       margin: const EdgeInsets.all(10),
-//     );
-//     return false;
-//   }
-
-//   void _showComingSoon(String feature) {
-//     Get.snackbar(
-//       'Info', 'Fitur $feature akan segera tersedia',
-//       backgroundColor: Colors.blue[100],
-//       colorText: Colors.blue[900],
-//       snackPosition: SnackPosition.TOP,
-//       margin: const EdgeInsets.all(10),
-//     );
-//   }
-
-//   /// Hanya untuk mock development — HAPUS setelah backend siap.
-//   /// Email dengan 'storage' → role storage, 'reseller' → reseller, selain itu → kandang.
-//   String _mockRoleFromEmail(String email) {
-//     if (email.contains('storage'))  return 'storage';
-//     if (email.contains('reseller')) return 'reseller';
-//     return 'kandang';
-//   }
-// }
