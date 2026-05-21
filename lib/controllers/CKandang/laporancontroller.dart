@@ -11,7 +11,7 @@ import 'package:path/path.dart' as path;
 class LaporanController extends GetxController {
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
-  static const String baseUrl = 'http://10.10.10.152:8000';
+  static const String baseUrl = 'http://10.10.10.108:8000';
 
   final _db = DBHelper();
 

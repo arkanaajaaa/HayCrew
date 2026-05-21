@@ -47,9 +47,6 @@ class ProfilPage extends GetView<ProfilController> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PRIVATE WIDGETS
-// ═══════════════════════════════════════════════════════════════════════════════
 
 class _ProfileHeaderCard extends GetView<ProfilController> {
   const _ProfileHeaderCard();

@@ -10,7 +10,7 @@ import 'package:haycrew_app/constants/app_colors.dart';
 enum JenisPermintaan { barang, dana }
 
 class PermintaanController extends GetxController {
-  static const String baseUrl = 'http://10.10.10.152:8000';
+  static const String baseUrl = 'http://10.10.10.108:8000';
 
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
@@ -26,7 +26,7 @@ class PermintaanController extends GetxController {
 
   String get nominalLabel => jenisPermintaan.value == JenisPermintaan.dana
       ? 'Nominal*'
-      : 'Nama Barang*';
+      : 'Jumlah*';
 
   String get nominalHint => jenisPermintaan.value == JenisPermintaan.dana
       ? 'Rp'
