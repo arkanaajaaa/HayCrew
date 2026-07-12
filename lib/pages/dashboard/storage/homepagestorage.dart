@@ -10,6 +10,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CButton.dart';
+import 'package:haycrew_app/components/Cloadingorempty.dart';
+import 'package:haycrew_app/components/CStokItemCard.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
 
@@ -169,30 +171,22 @@ class _StorageSummaryRow extends StatelessWidget {
           children: [
             Expanded(
               child: _SummaryCard(
-                label: 'Total Item',
-                value: controller.totalItem.toString(),
+                label: 'Stok Ayam (ekor)',
+                value: controller.stokAyamGudang.value.toString(),
                 color: AppColors.primaryGreen,
-                icon: Icons.inventory_2_outlined,
+                icon: Icons.egg_outlined,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _SummaryCard(
-                label: 'Menipis',
-                value: controller.itemMenipis.toString(),
+                label: 'Stok Keluar (ekor)',
+                value: controller.stokKeluar.value.toString(),
                 color: AppColors.orange,
-                icon: Icons.warning_amber_outlined,
+                icon: Icons.local_shipping_outlined,
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _SummaryCard(
-                label: 'Habis',
-                value: controller.itemHabis.toString(),
-                color: AppColors.red,
-                icon: Icons.remove_circle_outline,
-              ),
-            ),
+            
           ],
         ),
       ),
@@ -302,159 +296,26 @@ class _StorageStokList extends StatelessWidget {
     return Obx(() {
       // State 1: loading
       if (controller.isLoading.value) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: CircularProgressIndicator(color: AppColors.primaryGreen),
-          ),
-        );
+        return const CLoadingOrEmpty.loading();
       }
 
       // State 2: kosong
       if (controller.stokList.isEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  'Tidak ada data stok',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                ),
-              ],
-            ),
-          ),
+        return const CLoadingOrEmpty.empty(
+          message: 'Tidak ada data stok',
+          icon: Icons.inventory_2_outlined,
         );
       }
 
       // State 3: ada data
       return Column(
         children: controller.stokList.map((item) {
-          return _StokItemCard(
+          return CStokItemCard(
             item: item,
             onTap: () => controller.navigateToDetail(item),
           );
         }).toList(),
       );
     });
-  }
-}
-
-// ─── Kartu item stok ──────────────────────────────────────────────────────
-
-class _StokItemCard extends StatelessWidget {
-  final StokItemModel item;
-  final VoidCallback? onTap;
-
-  const _StokItemCard({required this.item, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = _statusColor(item.status);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: statusColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: statusColor.withOpacity(0.25)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Ikon status
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(_statusIcon(item.status), color: statusColor, size: 22),
-            ),
-            const SizedBox(width: 14),
-
-            // Nama & jumlah
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.nama,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${item.jumlah} ${item.satuan}',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-
-            // Badge status
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _statusLabel(item.status),
-                style: TextStyle(
-                  color: statusColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'aman':    return AppColors.lightGreen;
-      case 'menipis': return AppColors.orange;
-      case 'habis':   return AppColors.red;
-      default:        return AppColors.primaryGreen;
-    }
-  }
-
-  IconData _statusIcon(String status) {
-    switch (status) {
-      case 'aman':    return Icons.check_circle_outline;
-      case 'menipis': return Icons.warning_amber_outlined;
-      case 'habis':   return Icons.remove_circle_outline;
-      default:        return Icons.help_outline;
-    }
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'aman':    return 'Aman';
-      case 'menipis': return 'Menipis';
-      case 'habis':   return 'Habis';
-      default:        return status;
-    }
   }
 }

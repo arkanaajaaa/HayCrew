@@ -12,6 +12,8 @@ class AppRoutes {
   static const String KIRIM_PERMINTAAN  = '/kirim-permintaan';
   static const String DETAIL_STATUS     = '/detail-status';
   static const String DASHBOARD_STORAGE = '/dashboard-storage';
+  static const String TAMBAH_STOK        = '/tambah-stok';
+  static const String LAPORAN_STOK       = '/laporan-stok';
   static const String DASHBOARD_RESELLER = '/dashboard-reseller';
   static const String RIWAYAT       = '/riwayat';
   static const String PROFIL        = '/profil';

@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import '../routes/app_routes.dart';
 
 class LoginController extends GetxController {
-  static const String baseUrl = 'http://10.10.10.108:8000';
+  static const String baseUrl = 'http://103.253.212.178';
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();

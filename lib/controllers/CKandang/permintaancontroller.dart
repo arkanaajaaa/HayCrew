@@ -6,11 +6,13 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
+import 'package:haycrew_app/routes/app_routes.dart';
+import 'package:haycrew_app/components/CSuccessSplash.dart';
 
 enum JenisPermintaan { barang, dana }
 
 class PermintaanController extends GetxController {
-  static const String baseUrl = 'http://10.10.10.108:8000';
+  static const String baseUrl = 'http://103.253.212.178';
 
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
@@ -24,9 +26,8 @@ class PermintaanController extends GetxController {
   final jenisPermintaan = JenisPermintaan.dana.obs;
   final isLoading = false.obs;
 
-  String get nominalLabel => jenisPermintaan.value == JenisPermintaan.dana
-      ? 'Nominal*'
-      : 'Jumlah*';
+  String get nominalLabel =>
+      jenisPermintaan.value == JenisPermintaan.dana ? 'Nominal*' : 'Jumlah*';
 
   String get nominalHint => jenisPermintaan.value == JenisPermintaan.dana
       ? 'Rp'
@@ -128,17 +129,13 @@ class PermintaanController extends GetxController {
       final responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Get.snackbar(
-          'Berhasil',
-          'Permintaan berhasil dikirim.',
-          backgroundColor: Colors.green[100],
-          colorText: Colors.green[900],
-          snackPosition: SnackPosition.TOP,
-          margin: const EdgeInsets.all(12),
-          duration: const Duration(seconds: 3),
-        );
         _resetForm();
-        Get.back();
+
+        await CSuccessSplash.show(message: 'Permintaan berhasil\nterkirim');
+
+        Get.offAllNamed(AppRoutes.DASHBOARD_KANDANG);
+
+        return;
       } else {
         _showError(responseBody['message'] ?? 'Gagal mengirim permintaan.');
       }
