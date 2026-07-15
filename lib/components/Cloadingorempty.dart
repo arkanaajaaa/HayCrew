@@ -4,17 +4,7 @@ import '../constants/app_colors.dart';
 /// CLoadingOrEmpty — Reusable widget untuk state loading, kosong, dan error.
 ///
 /// Dipakai di semua halaman yang punya list data agar konsisten.
-///
-/// Contoh penggunaan dengan Obx:
-/// ```dart
-/// Obx(() {
-///   if (controller.isLoading.value) return const CLoadingOrEmpty.loading();
-///   if (controller.list.isEmpty) return const CLoadingOrEmpty.empty(
-///     message: 'Tidak ada data permintaan',
-///   );
-///   return Column(children: controller.list.map(...).toList());
-/// })
-/// ```
+
 class CLoadingOrEmpty extends StatelessWidget {
   final _Type _type;
   final String? message;

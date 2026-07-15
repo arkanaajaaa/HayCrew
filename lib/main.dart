@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'HayCrew App',
+      title: 'HayCrew',
       debugShowCheckedModeBanner: false,
       
       localizationsDelegates: const [

@@ -182,15 +182,6 @@ class LaporanStokController extends GetxController {
     Get.snackbar('Berhasil', 'Laporan dihapus.');
   }
 
-  void _resetForm() {
-    jumlahDagingJualController.clear();
-    tempatDistribusiController.clear();
-    catatanController.clear();
-    image.value = null;
-    dateRange.value = null;
-    formattedDateRange.value = 'Pilih Tanggal';
-  }
-
   @override
   void onClose() {
     jumlahDagingJualController.dispose();
