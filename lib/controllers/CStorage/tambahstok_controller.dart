@@ -205,14 +205,7 @@ class TambahStokController extends GetxController {
     Get.snackbar('Berhasil', 'Data dihapus.');
   }
 
-  void _resetForm() {
-    stokMasukController.clear();
-    tempatDistribusiController.clear();
-    catatanController.clear();
-    image.value = null;
-    dateRange.value = null;
-    formattedDateRange.value = 'Pilih Tanggal';
-  }
+
 
   @override
   void onClose() {
