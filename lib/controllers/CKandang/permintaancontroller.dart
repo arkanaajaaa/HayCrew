@@ -21,8 +21,8 @@ class PermintaanController extends GetxController {
   final nominalController = TextEditingController();
   final keteranganController = TextEditingController();
 
-  final dateRange = Rxn<DateTimeRange>();
-  final formattedDateRange = 'Pilih Tanggal'.obs;
+  final selectedDate = Rxn<DateTime>();
+  final formattedDate = 'Pilih Tanggal'.obs;
   final jenisPermintaan = JenisPermintaan.dana.obs;
   final isLoading = false.obs;
 
@@ -52,8 +52,9 @@ class PermintaanController extends GetxController {
   bool get isDanaSelected => jenisPermintaan.value == JenisPermintaan.dana;
 
   void onTapDatePicker() async {
-    final picked = await showDateRangePicker(
+    final picked = await showDatePicker(
       context: Get.context!,
+      initialDate: selectedDate.value ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       locale: const Locale('id', 'ID'),
@@ -71,10 +72,8 @@ class PermintaanController extends GetxController {
     );
 
     if (picked != null) {
-      dateRange.value = picked;
-      formattedDateRange.value =
-          "${DateFormat('dd MMM yyyy', 'id_ID').format(picked.start)} \u2014 "
-          "${DateFormat('dd MMM yyyy', 'id_ID').format(picked.end)}";
+      selectedDate.value = picked;
+      formattedDate.value = DateFormat('dd MMM yyyy', 'id_ID').format(picked);
     }
   }
 
@@ -96,7 +95,7 @@ class PermintaanController extends GetxController {
       final Map<String, String> body = {
         'nama_permintaan': keperluanController.text.trim(),
         'tipe': tipe,
-        'tanggal': DateFormat('yyyy-MM-dd').format(dateRange.value!.start),
+        'tanggal': DateFormat('yyyy-MM-dd').format(selectedDate.value!),
       };
 
       if (tipe == 'dana') {
@@ -149,7 +148,7 @@ class PermintaanController extends GetxController {
   }
 
   bool _validate() {
-    if (dateRange.value == null) {
+    if (selectedDate.value == null) {
       return _showError('Mohon pilih tanggal terlebih dahulu.');
     }
     if (keperluanController.text.trim().isEmpty) {
@@ -179,8 +178,8 @@ class PermintaanController extends GetxController {
     keperluanController.clear();
     nominalController.clear();
     keteranganController.clear();
-    dateRange.value = null;
-    formattedDateRange.value = 'Pilih Tanggal';
+    selectedDate.value = null;
+    formattedDate.value = 'Pilih Tanggal';
     jenisPermintaan.value = JenisPermintaan.dana;
   }
 

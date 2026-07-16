@@ -20,27 +20,56 @@ class DBHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 6, // naik dari 5
       onCreate: (db, version) async {
         await _createLaporanKandangTable(db);
         await _createTambahStokTable(db);
         await _createLaporanGudangTable(db);
+        await _createStokTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        // User lama yang sudah install versi 1 akan lewat sini,
-        // supaya tabel baru tetap kebuat tanpa harus uninstall app.
         if (oldVersion < 2) {
           await _createTambahStokTable(db);
           await _createLaporanGudangTable(db);
         }
-        
         if (oldVersion < 3) {
           await _migrateToSingularDate(db);
+        }
+        if (oldVersion < 4) {
+          await _createStokTable(db);
+        }
+        if (oldVersion < 5) {
+          await _migrateLaporanGudangStokDaging(db);
+        }
+        if (oldVersion >= 2 && oldVersion < 6) {
+          // hanya device yang tabel tambah_stok-nya sudah ada dengan schema
+          // lama (tanggal_mulai/tanggal_selesai) yang perlu dimigrasi.
+          // Device yang baru dibuatkan tabelnya di cabang oldVersion<2 di atas
+          // sudah otomatis pakai schema baru (kolom `tanggal` tunggal).
+          await _migrateTambahStokSingularDate(db);
         }
       },
     );
   }
 
+  Future<void> _migrateLaporanGudangStokDaging(Database db) async {
+    await db.execute(
+      "ALTER TABLE laporan_gudang ADD COLUMN detail_stok TEXT",
+    );
+  }
+
+  Future<void> _migrateTambahStokSingularDate(Database db) async {
+    await db.execute('ALTER TABLE tambah_stok RENAME TO tambah_stok_old');
+    await _createTambahStokTable(db);
+    await db.execute('''
+      INSERT INTO tambah_stok
+        (id, stok_masuk, tempat_pendistribusian, catatan, foto, tanggal, is_synced, created_at)
+      SELECT
+        id, stok_masuk, tempat_pendistribusian, catatan, foto, tanggal_mulai, is_synced, created_at
+      FROM tambah_stok_old
+    ''');
+    await db.execute('DROP TABLE tambah_stok_old');
+  }
 
   Future<void> _migrateToSingularDate(Database db) async {
     // --- laporan_kandang ---
@@ -99,8 +128,7 @@ class DBHelper {
         tempat_pendistribusian TEXT NOT NULL,
         catatan TEXT,
         foto TEXT,
-        tanggal_mulai TEXT NOT NULL,
-        tanggal_selesai TEXT NOT NULL,
+        tanggal TEXT NOT NULL,
         is_synced INTEGER DEFAULT 0,
         created_at TEXT NOT NULL
       )
@@ -111,13 +139,28 @@ class DBHelper {
     await db.execute('''
       CREATE TABLE laporan_gudang(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        jumlah_daging_jual INTEGER NOT NULL,
+        jumlah_daging_jual REAL NOT NULL,
+        detail_stok TEXT,
         tempat_pendistribusian TEXT NOT NULL,
         catatan TEXT,
         foto TEXT,
         tanggal TEXT NOT NULL,
         is_synced INTEGER DEFAULT 0,
         created_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createStokTable(Database db) async {
+    // id disimpan sebagai TEXT karena berasal dari server (bukan digenerate lokal),
+    // jadi bukan INTEGER PRIMARY KEY AUTOINCREMENT seperti tabel-tabel lain di atas.
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS stok(
+        id TEXT PRIMARY KEY,
+        nama TEXT NOT NULL,
+        jumlah INTEGER NOT NULL,
+        satuan TEXT,
+        status TEXT NOT NULL
       )
     ''');
   }
@@ -254,5 +297,36 @@ class DBHelper {
   Future<int> deleteLaporanGudang(int id) async {
     final client = await db;
     return client.delete("laporan_gudang", where: "id = ?", whereArgs: [id]);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STOK
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Future<void> replaceAllStok(List<Map<String, dynamic>> stokList) async {
+    final client = await db;
+    final batch = client.batch();
+    batch.delete('stok'); // bersihin data lama biar nggak ada sisa item yang udah dihapus di server
+    for (final item in stokList) {
+      batch.insert(
+        'stok',
+        {
+          'id': item['id']?.toString() ?? '',
+          'nama': item['nama'] ?? '',
+          'jumlah': item['jumlah'] is int
+              ? item['jumlah']
+              : int.tryParse(item['jumlah']?.toString() ?? '') ?? 0,
+          'satuan': item['satuan'] ?? '',
+          'status': item['status'] ?? 'aman',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<List<Map<String, dynamic>>> getAllStok() async {
+    final client = await db;
+    return client.query('stok', orderBy: 'nama ASC');
   }
 }

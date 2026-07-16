@@ -36,48 +36,66 @@ class HomeController extends GetxController {
   }
 
   Future<void> loadStatusPermintaan() async {
-    try {
-      isLoading.value = true;
+  try {
+    isLoading.value = true;
 
-      final response = await http
-          .get(
-            Uri.parse('${ApiConstant.baseUrl}/api/permintaan'),
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $_token',
-            },
+    final response = await http
+        .get(
+          Uri.parse('${ApiConstant.baseUrl}/api/permintaan'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $_token',
+          },
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      final List data = body['data'] ?? [];
+
+      final permintaanList = data
+          .map((item) => PermintaanModel.fromJson(item))
+          .toList();
+
+      final mapped = permintaanList
+          .map(
+            (item) => StatusPermintaanModel.fromJson({
+              'id': item.id.toString(),
+              'day': item.tanggal.day,
+              'month': _monthName(item.tanggal.month),
+              'title': item.namaPermintaan,
+              'status': _mapStatus(item.status),
+              'description': item.tipe == 'dana'
+                  ? 'Dana: Rp ${item.harga ?? 0}'
+                  : 'Barang: ${item.jumlah ?? 0} pcs',
+            }),
           )
-          .timeout(const Duration(seconds: 15));
+          .toList();
 
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        final List data = body['data'] ?? [];
+      mapped.sort((a, b) => _statusPriority(a.status).compareTo(_statusPriority(b.status)));
 
-        final permintaanList = data
-            .map((item) => PermintaanModel.fromJson(item))
-            .toList();
-
-        statusList.value = permintaanList
-            .map(
-              (item) => StatusPermintaanModel.fromJson({
-                'id': item.id.toString(),
-                'day': item.tanggal.day,
-                'month': _monthName(item.tanggal.month),
-                'title': item.namaPermintaan,
-                'status': _mapStatus(item.status),
-                'description': item.tipe == 'dana'
-                    ? 'Dana: Rp ${item.harga ?? 0}'
-                    : 'Barang: ${item.jumlah ?? 0} pcs',
-              }),
-            )
-            .toList();
-      } else {
-        Get.snackbar('Error', 'Gagal memuat data permintaan.');
-      }
+      statusList.value = mapped;
+    } else {
+      Get.snackbar('Error', 'Gagal memuat data permintaan.');
+    }
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat data: $e');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  int _statusPriority(dynamic status) {
+    final s = status.toString().split('.').last; // handle kalau status itu enum
+    switch (s) {
+      case 'accepted':
+        return 0;
+      case 'pending':
+        return 1;
+      case 'rejected':
+        return 2;
+      default:
+        return 3;
     }
   }
 

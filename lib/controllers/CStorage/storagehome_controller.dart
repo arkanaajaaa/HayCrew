@@ -48,9 +48,8 @@ class StorageHomeController extends GetxController {
   final RxList<StokItemModel> stokList = <StokItemModel>[].obs;
   final isLoading = false.obs;
 
-  // ✨ Ringkasan stok ayam — coba ambil dari VPS dulu, fallback ke data lokal
-  final stokAyamGudang = 0.obs; // ekor ayam yang masih ada di gudang
-  final stokKeluar = 0.obs; // total ekor yang sudah keluar/terjual
+  final stokAyamGudang = 0.obs; 
+  final stokKeluar = 0.obs; 
 
   int get totalItem => stokList.length;
   int get itemAman => stokList.where((s) => s.status == 'aman').length;
@@ -74,54 +73,38 @@ class StorageHomeController extends GetxController {
   }
 
   Future<void> loadStok() async {
-    try {
-      isLoading.value = true;
-      await Future.delayed(const Duration(seconds: 1));
+  try {
+    isLoading.value = true;
 
-      final mockData = [
-        {
-          'id': '1',
-          'nama': 'Pakan Ayam',
-          'jumlah': 150,
-          'satuan': 'kg',
-          'status': 'aman',
-        },
-        {
-          'id': '2',
-          'nama': 'Sekam',
-          'jumlah': 20,
-          'satuan': 'karung',
-          'status': 'menipis',
-        },
-        {
-          'id': '3',
-          'nama': 'Vitamin Ternak',
-          'jumlah': 0,
-          'satuan': 'botol',
-          'status': 'habis',
-        },
-        {
-          'id': '4',
-          'nama': 'Obat Semprot',
-          'jumlah': 8,
-          'satuan': 'liter',
-          'status': 'aman',
-        },
-        {
-          'id': '5',
-          'nama': 'Tali Rafia',
-          'jumlah': 3,
-          'satuan': 'gulung',
-          'status': 'menipis',
-        },
-      ];
+    final res = await http
+        .get(
+          Uri.parse('${ApiConstant.baseUrl}/api/stok'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $_token',
+          },
+        )
+        .timeout(const Duration(seconds: 10));
 
-      stokList.value = mockData.map((d) => StokItemModel.fromJson(d)).toList();
-    } catch (e) {
-      Get.snackbar('Error', 'Gagal memuat stok: $e');
-    } finally {
-      isLoading.value = false;
+    if (res.statusCode == 200) {
+      final list = _extractList(res.body);
+      stokList.value = list.map((d) => StokItemModel.fromJson(d)).toList();
+      // simpan cache lokal biar bisa dipakai offline nanti
+      await _db.replaceAllStok(list);
+    } else {
+      await _loadStokFromLocal();
     }
+  } catch (e) {
+    debugPrint('Gagal ambil stok dari API, fallback lokal: $e');
+    await _loadStokFromLocal();
+  } finally {
+    isLoading.value = false;
+    }
+  } 
+
+  Future<void> _loadStokFromLocal() async {
+    final localData = await _db.getAllStok();
+    stokList.value = localData.map((d) => StokItemModel.fromJson(d)).toList();
   }
 
   Future<void> refreshData() async {
@@ -129,9 +112,6 @@ class StorageHomeController extends GetxController {
     await fetchStokAyamSummary();
   }
 
-  /// Hitung ringkasan stok ayam:
-  /// 1) Coba ambil dari VPS dulu (GET /api/laporan-gudang & GET /api/permintaan)
-  /// 2) Kalau gagal/offline, fallback ke data lokal (SQLite)
   Future<void> fetchStokAyamSummary() async {
     try {
       final fromApi = await _fetchStokAyamFromApi();
@@ -144,21 +124,15 @@ class StorageHomeController extends GetxController {
       debugPrint('Gagal ambil ringkasan stok ayam dari API: $e');
     }
 
-    // Fallback: hitung dari data lokal
     await _fetchStokAyamFromLocal();
   }
 
-  /// Ambil data dari VPS. Return null kalau request gagal (biar fallback jalan).
-  ///
-  /// CATATAN: sesuaikan parsing di bawah ini kalau bentuk response JSON dari
-  /// Laravel-mu beda (misal dibungkus {"data": [...]} atau field-nya beda nama).
   Future<Map<String, int>?> _fetchStokAyamFromApi() async {
     final headers = {
       'Accept': 'application/json',
       'Authorization': 'Bearer $_token',
     };
 
-    // 1) Total KELUAR — dari GET /api/laporan-gudang
     final laporanRes = await http
         .get(
           Uri.parse('${ApiConstant.baseUrl}/api/laporan-gudang'),
@@ -174,8 +148,6 @@ class StorageHomeController extends GetxController {
       return sum + (v is int ? v : int.tryParse(v.toString()) ?? 0);
     });
 
-    // 2) Total MASUK — dari GET /api/permintaan, difilter yang tipe/nama-nya
-    //    cocok dengan yang dikirim TambahStokController.
     final permintaanRes = await http
         .get(
           Uri.parse('${ApiConstant.baseUrl}/api/permintaan'),
@@ -197,8 +169,6 @@ class StorageHomeController extends GetxController {
     return {'gudang': gudang, 'keluar': totalKeluar};
   }
 
-  /// Response Laravel biasanya berupa List langsung, atau dibungkus
-  /// {"data": [...]}. Coba tangani dua-duanya.
   List<Map<String, dynamic>> _extractList(String responseBody) {
     final decoded = jsonDecode(responseBody);
     if (decoded is List) {

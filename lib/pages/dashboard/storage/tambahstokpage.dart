@@ -23,10 +23,13 @@ class TambahStokPage extends GetView<TambahStokController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Single date -> controller.formattedDate / controller.selectDate
+              // (butuh TambahStokController diupdate + tabel tambah_stok
+              // dimigrasi ke kolom `tanggal` tunggal, lihat catatan di chat).
               Obx(
                 () => CDateRangePicker(
-                  displayText: controller.formattedDateRange.value,
-                  onTap: controller.selectDateRange,
+                  displayText: controller.formattedDate.value,
+                  onTap: controller.selectDate,
                 ),
               ),
               const SizedBox(height: 18),
