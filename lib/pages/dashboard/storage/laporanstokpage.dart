@@ -11,6 +11,8 @@ import '../../../constants/app_colors.dart';
 class LaporanStokPage extends GetView<LaporanStokController> {
   const LaporanStokPage({Key? key}) : super(key: key);
 
+  static const Color _chipBackground = Color(0xFFE3E0C8);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -25,30 +27,20 @@ class LaporanStokPage extends GetView<LaporanStokController> {
             children: [
               Obx(
                 () => CDateRangePicker(
-                  displayText: controller.formattedDateRange.value,
-                  onTap: controller.selectDateRange,
+                  displayText: controller.formattedDate.value,
+                  onTap: controller.selectDate,
                 ),
               ),
               const SizedBox(height: 18),
 
-              Text('Jumlah daging jual*', style: theme.textTheme.bodyMedium),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: CTextField(
-                      controller: controller.jumlahDagingJualController,
-                      hintText: '0',
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('ekor'),
-                ],
-              ),
+              _buildLabel(theme, 'Stok Daging', required: true),
+              const SizedBox(height: 8),
+              _buildStokDagingHeader(context),
+              const SizedBox(height: 10),
+              Obx(() => _buildStokDagingListView()),
               const SizedBox(height: 18),
 
-              Text('Tempat Pendistribusian*', style: theme.textTheme.bodyMedium),
+              _buildLabel(theme, 'Tempat Pendistribusian', required: true),
               const SizedBox(height: 6),
               CTextField(
                 controller: controller.tempatDistribusiController,
@@ -56,7 +48,7 @@ class LaporanStokPage extends GetView<LaporanStokController> {
               ),
               const SizedBox(height: 18),
 
-              Text('Catatan', style: theme.textTheme.bodyMedium),
+              _buildLabel(theme, 'Catatan'),
               const SizedBox(height: 6),
               CTextField(
                 controller: controller.catatanController,
@@ -91,6 +83,198 @@ class LaporanStokPage extends GetView<LaporanStokController> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLabel(ThemeData theme, String text, {bool required = false}) {
+    return RichText(
+      text: TextSpan(
+        style: theme.textTheme.bodyMedium?.copyWith(color: Colors.black87),
+        children: [
+          TextSpan(text: text),
+          if (required)
+            const TextSpan(
+              text: '*',
+              style: TextStyle(color: Colors.red),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Header "Jenis / Bobot / Jumlah" + tombol "+" buat buka form tambah item.
+  Widget _buildStokDagingHeader(BuildContext context) {
+    return Row(
+      children: [
+        _headerChip('Jenis'),
+        const SizedBox(width: 8),
+        _headerChip('Bobot'),
+        const SizedBox(width: 8),
+        _headerChip('Jumlah'),
+        const Spacer(),
+        InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => _showAddStokDagingSheet(context),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: _chipBackground,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.add, color: AppColors.primaryGreen),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _headerChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: _chipBackground,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.primaryGreen,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStokDagingListView() {
+    final items = controller.stokDagingList;
+
+    if (items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          'Belum ada data stok daging. Tap "+" untuk menambah.',
+          style: TextStyle(color: Colors.black45, fontSize: 13),
+        ),
+      );
+    }
+
+    return Column(
+      children: items.map((item) {
+        final bobotText = item.bobot
+            .toStringAsFixed(
+                item.bobot.truncateToDouble() == item.bobot ? 0 : 1)
+            .replaceAll('.', ',');
+        return Dismissible(
+          key: ValueKey(item.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 12),
+            child: const Icon(Icons.delete, color: Colors.red),
+          ),
+          onDismissed: (_) => controller.removeStokDaging(item.id),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 28,
+                  child: Text(
+                    '${item.jumlah}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Text(item.jenis)),
+                Text('$bobotText kg'),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  void _showAddStokDagingSheet(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.only(
+          left: 18,
+          right: 18,
+          top: 18,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 18,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Tambah Stok Daging',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+
+            const Text('Jenis'),
+            const SizedBox(height: 6),
+            CTextField(
+              controller: controller.jenisController,
+              hintText: 'Contoh : Whole / Parting',
+            ),
+            const SizedBox(height: 14),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Bobot (kg)'),
+                      const SizedBox(height: 6),
+                      CTextField(
+                        controller: controller.bobotController,
+                        hintText: '0,5',
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Jumlah'),
+                      const SizedBox(height: 6),
+                      CTextField(
+                        controller: controller.jumlahController,
+                        hintText: '0',
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            CButton(
+              text: 'Tambah',
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              borderRadius: 8,
+              color: AppColors.primaryGreen,
+              onPressed: controller.addStokDaging,
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
     );
   }
 }

@@ -18,7 +18,7 @@ import 'package:path/path.dart' as path;
 /// (POST /api/permintaan), dengan field di-mapping seperti berikut:
 ///   - nama_permintaan : 'Tambah Stok Ayam' (fixed, biar gampang difilter)
 ///   - tipe            : 'barang'
-///   - tanggal         : tanggal_mulai dari date range (endpoint cuma terima 1 tanggal)
+///   - tanggal         : tanggal tunggal yang dipilih user
 ///   - jumlah          : nilai Stok Masuk (ekor)
 ///   - keterangan      : gabungan Tempat Pendistribusian + Catatan
 ///   - foto            : file upload (tambahan baru, PermintaanController versi
@@ -28,6 +28,12 @@ import 'package:path/path.dart' as path;
 /// Method pengiriman data (simpan lokal dulu -> coba kirim ke API -> tandai
 /// synced kalau berhasil / tetap tersimpan lokal kalau gagal) tetap sama
 /// persis dengan LaporanController (CKandang).
+///
+/// Catatan migrasi: form ini sebelumnya pakai date RANGE, tapi endpoint
+/// /api/permintaan cuma pernah terima 1 tanggal (dulu dipakai tanggal_mulai
+/// saja, tanggal_selesai tidak pernah dipakai). Karena itu diubah jadi
+/// single date, sekaligus tabel lokal `tambah_stok` dimigrasi ke kolom
+/// `tanggal` tunggal (lihat dbService.dart versi 6).
 class TambahStokController extends GetxController {
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
@@ -38,8 +44,8 @@ class TambahStokController extends GetxController {
   final tempatDistribusiController = TextEditingController();
   final catatanController = TextEditingController();
 
-  final dateRange = Rxn<DateTimeRange>();
-  final formattedDateRange = 'Pilih Tanggal'.obs;
+  final selectedDate = Rxn<DateTime>();
+  final formattedDate = 'Pilih Tanggal'.obs;
 
   final Rx<File?> image = Rx<File?>(null);
 
@@ -52,18 +58,17 @@ class TambahStokController extends GetxController {
     fetchTambahStok();
   }
 
-  void selectDateRange() async {
-    final picked = await showDateRangePicker(
+  Future<void> selectDate() async {
+    final picked = await showDatePicker(
       context: Get.context!,
+      initialDate: selectedDate.value ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       locale: const Locale('id', 'ID'),
     );
     if (picked != null) {
-      dateRange.value = picked;
-      final String formatted =
-          "${DateFormat('dd MMM yyyy', 'id_ID').format(picked.start)} — ${DateFormat('dd MMM yyyy', 'id_ID').format(picked.end)}";
-      formattedDateRange.value = formatted;
+      selectedDate.value = picked;
+      formattedDate.value = DateFormat('dd MMM yyyy', 'id_ID').format(picked);
     }
   }
 
@@ -80,7 +85,7 @@ class TambahStokController extends GetxController {
   bool _validate() {
     if (stokMasukController.text.isEmpty ||
         tempatDistribusiController.text.isEmpty ||
-        dateRange.value == null) {
+        selectedDate.value == null) {
       Get.snackbar(
         'Error',
         'Mohon lengkapi semua field wajib (*).',
@@ -98,14 +103,14 @@ class TambahStokController extends GetxController {
     isLoading.value = true;
 
     final now = DateTime.now().toIso8601String();
-    // Data yang disimpan lokal (struktur tabel tambah_stok, TIDAK berubah)
+    // Data yang disimpan lokal (struktur tabel tambah_stok versi baru,
+    // kolom `tanggal` tunggal — lihat dbService.dart)
     final localData = {
       'stok_masuk': int.parse(stokMasukController.text),
       'tempat_pendistribusian': tempatDistribusiController.text,
       'catatan': catatanController.text,
       'foto': image.value?.path,
-      'tanggal_mulai': DateFormat('yyyy-MM-dd').format(dateRange.value!.start),
-      'tanggal_selesai': DateFormat('yyyy-MM-dd').format(dateRange.value!.end),
+      'tanggal': DateFormat('yyyy-MM-dd').format(selectedDate.value!),
       'is_synced': 0,
       'created_at': now,
     };
@@ -158,7 +163,7 @@ class TambahStokController extends GetxController {
 
       request.fields['nama_permintaan'] = 'Tambah Stok Ayam';
       request.fields['tipe'] = 'barang';
-      request.fields['tanggal'] = data['tanggal_mulai']; // pakai tgl awal saja
+      request.fields['tanggal'] = data['tanggal'];
       request.fields['jumlah'] = data['stok_masuk'].toString();
       request.fields['keterangan'] = keterangan;
 
@@ -204,8 +209,6 @@ class TambahStokController extends GetxController {
     fetchTambahStok();
     Get.snackbar('Berhasil', 'Data dihapus.');
   }
-
-
 
   @override
   void onClose() {
