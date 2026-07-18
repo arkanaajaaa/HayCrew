@@ -20,7 +20,7 @@ class DBHelper {
 
     return await openDatabase(
       path,
-      version: 6, // naik dari 5
+      version: 7, // naik dari 6 — tambah stok_awal & stok_masuk di laporan_gudang
       onCreate: (db, version) async {
         await _createLaporanKandangTable(db);
         await _createTambahStokTable(db);
@@ -45,20 +45,58 @@ class DBHelper {
           // hanya device yang tabel tambah_stok-nya sudah ada dengan schema
           // lama (tanggal_mulai/tanggal_selesai) yang perlu dimigrasi.
           // Device yang baru dibuatkan tabelnya di cabang oldVersion<2 di atas
-          // sudah otomatis pakai schema baru (kolom `tanggal` tunggal).
+          // sudah otomatis pakai schema baru (kolom `tanggal` tunggal), makanya
+          // di dalam fungsi migrasi tetap dicek dulu apakah kolom lama ada.
           await _migrateTambahStokSingularDate(db);
+        }
+        if (oldVersion < 7) {
+          await _migrateLaporanGudangStokAwalMasuk(db);
         }
       },
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // HELPER
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Cek apakah sebuah kolom ada di tabel tertentu.
+  /// Dipakai supaya fungsi migrasi nggak asal jalan kalau skema tabel
+  /// ternyata sudah versi baru (misal karena baru dibuat fresh di
+  /// cabang oldVersion<2, bukan hasil upgrade dari skema lama).
+  Future<bool> _columnExists(Database db, String table, String column) async {
+    final result = await db.rawQuery('PRAGMA table_info($table)');
+    return result.any((col) => col['name'] == column);
+  }
+
   Future<void> _migrateLaporanGudangStokDaging(Database db) async {
+    if (await _columnExists(db, 'laporan_gudang', 'detail_stok')) return;
     await db.execute(
       "ALTER TABLE laporan_gudang ADD COLUMN detail_stok TEXT",
     );
   }
 
+  /// Tambah kolom `stok_awal` & `stok_masuk` (integer) ke tabel laporan_gudang.
+  /// Dua kolom ini wajib diisi oleh backend Laravel (lihat kolom NOT NULL di
+  /// tabel MariaDB laporan_gudang), jadi harus ada juga di skema lokal
+  /// supaya data yang disimpan offline punya struktur yang sama dengan yang
+  /// dikirim ke server.
+  Future<void> _migrateLaporanGudangStokAwalMasuk(Database db) async {
+    if (!await _columnExists(db, 'laporan_gudang', 'stok_awal')) {
+      await db.execute(
+        "ALTER TABLE laporan_gudang ADD COLUMN stok_awal INTEGER DEFAULT 0",
+      );
+    }
+    if (!await _columnExists(db, 'laporan_gudang', 'stok_masuk')) {
+      await db.execute(
+        "ALTER TABLE laporan_gudang ADD COLUMN stok_masuk INTEGER DEFAULT 0",
+      );
+    }
+  }
+
   Future<void> _migrateTambahStokSingularDate(Database db) async {
+    if (!await _columnExists(db, 'tambah_stok', 'tanggal_mulai')) return;
+
     await db.execute('ALTER TABLE tambah_stok RENAME TO tambah_stok_old');
     await _createTambahStokTable(db);
     await db.execute('''
@@ -73,30 +111,34 @@ class DBHelper {
 
   Future<void> _migrateToSingularDate(Database db) async {
     // --- laporan_kandang ---
-    await db.execute('ALTER TABLE laporan_kandang RENAME TO laporan_kandang_old');
-    await _createLaporanKandangTable(db);
-    await db.execute('''
-      INSERT INTO laporan_kandang
-        (id, siklus_id, jumlah_ayam_awal, jumlah_ayam_mati, rata_rata_bobot,
-         catatan, foto, tanggal, is_synced, created_at)
-      SELECT
-        id, NULL, jumlah_ayam_awal, jumlah_ayam_mati, rata_rata_bobot,
-        catatan, foto, tanggal_mulai, is_synced, created_at
-      FROM laporan_kandang_old
-    ''');
-    await db.execute('DROP TABLE laporan_kandang_old');
+    if (await _columnExists(db, 'laporan_kandang', 'tanggal_mulai')) {
+      await db.execute('ALTER TABLE laporan_kandang RENAME TO laporan_kandang_old');
+      await _createLaporanKandangTable(db);
+      await db.execute('''
+        INSERT INTO laporan_kandang
+          (id, siklus_id, jumlah_ayam_awal, jumlah_ayam_mati, rata_rata_bobot,
+           catatan, foto, tanggal, is_synced, created_at)
+        SELECT
+          id, NULL, jumlah_ayam_awal, jumlah_ayam_mati, rata_rata_bobot,
+          catatan, foto, tanggal_mulai, is_synced, created_at
+        FROM laporan_kandang_old
+      ''');
+      await db.execute('DROP TABLE laporan_kandang_old');
+    }
 
     // --- laporan_gudang ---
-    await db.execute('ALTER TABLE laporan_gudang RENAME TO laporan_gudang_old');
-    await _createLaporanGudangTable(db);
-    await db.execute('''
-      INSERT INTO laporan_gudang
-        (id, jumlah_daging_jual, tempat_pendistribusian, catatan, foto, tanggal, is_synced, created_at)
-      SELECT
-        id, jumlah_daging_jual, tempat_pendistribusian, catatan, foto, tanggal_mulai, is_synced, created_at
-      FROM laporan_gudang_old
-    ''');
-    await db.execute('DROP TABLE laporan_gudang_old');
+    if (await _columnExists(db, 'laporan_gudang', 'tanggal_mulai')) {
+      await db.execute('ALTER TABLE laporan_gudang RENAME TO laporan_gudang_old');
+      await _createLaporanGudangTable(db);
+      await db.execute('''
+        INSERT INTO laporan_gudang
+          (id, jumlah_daging_jual, tempat_pendistribusian, catatan, foto, tanggal, is_synced, created_at)
+        SELECT
+          id, jumlah_daging_jual, tempat_pendistribusian, catatan, foto, tanggal_mulai, is_synced, created_at
+        FROM laporan_gudang_old
+      ''');
+      await db.execute('DROP TABLE laporan_gudang_old');
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -139,6 +181,8 @@ class DBHelper {
     await db.execute('''
       CREATE TABLE laporan_gudang(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        stok_awal INTEGER NOT NULL DEFAULT 0,
+        stok_masuk INTEGER NOT NULL DEFAULT 0,
         jumlah_daging_jual REAL NOT NULL,
         detail_stok TEXT,
         tempat_pendistribusian TEXT NOT NULL,

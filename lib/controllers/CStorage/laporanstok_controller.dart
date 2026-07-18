@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:haycrew_app/services/dbService.dart';
 import 'package:haycrew_app/components/CSuccessSplash.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
+import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
@@ -50,6 +51,12 @@ class LaporanStokController extends GetxController {
   final tempatDistribusiController = TextEditingController();
   final catatanController = TextEditingController();
 
+  // Wajib diisi backend: stok_awal & stok_masuk (integer).
+  // TODO: konfirmasi ke tim backend apakah satuannya ekor atau kg, lalu
+  // sesuaikan hint text di laporanstokpage.dart kalau perlu.
+  final stokAwalController = TextEditingController();
+  final stokMasukController = TextEditingController();
+
   final selectedDate = Rxn<DateTime>();
   final formattedDate = 'Pilih Tanggal'.obs;
 
@@ -62,7 +69,8 @@ class LaporanStokController extends GetxController {
   final stokDagingList = <StokDagingItem>[].obs;
 
   /// Total kg daging (jumlah bobot x jumlah unit di semua baris).
-  /// Ini yang dikirim sebagai `jumlah_daging_jual` (kolom REAL di DB).
+  /// Dikirim ke API sebagai `jumlah_daging_jual` — backend mewajibkan ini
+  /// berupa integer, jadi saat submit dibulatkan (lihat `_submitToApi`).
   double get totalDagingJual =>
       stokDagingList.fold(0.0, (sum, item) => sum + item.totalBobot);
 
@@ -178,6 +186,24 @@ class LaporanStokController extends GetxController {
       );
       return false;
     }
+    if (stokAwalController.text.trim().isEmpty ||
+        int.tryParse(stokAwalController.text.trim()) == null) {
+      Get.snackbar(
+        'Error',
+        'Stok Awal wajib diisi dengan angka.',
+        backgroundColor: Colors.red.shade100,
+      );
+      return false;
+    }
+    if (stokMasukController.text.trim().isEmpty ||
+        int.tryParse(stokMasukController.text.trim()) == null) {
+      Get.snackbar(
+        'Error',
+        'Stok Masuk wajib diisi dengan angka.',
+        backgroundColor: Colors.red.shade100,
+      );
+      return false;
+    }
     return true;
   }
 
@@ -189,6 +215,8 @@ class LaporanStokController extends GetxController {
 
     final now = DateTime.now().toIso8601String();
     final localData = {
+      'stok_awal': int.parse(stokAwalController.text.trim()),
+      'stok_masuk': int.parse(stokMasukController.text.trim()),
       'jumlah_daging_jual': totalDagingJual,
       'detail_stok': jsonEncode(
         stokDagingList.map((item) => item.toJson()).toList(),
@@ -210,6 +238,7 @@ class LaporanStokController extends GetxController {
         await _db.markLaporanGudangSynced(localId);
         fetchLaporanGudang();
         await CSuccessSplash.show(message: 'Laporan berhasil\ntersimpan');
+        _refreshHomeIfExists();
         Get.back();
       } else {
         fetchLaporanGudang();
@@ -218,12 +247,22 @@ class LaporanStokController extends GetxController {
           'Laporan disimpan lokal, akan disync saat online.',
           backgroundColor: Colors.orange.shade100,
         );
+        _refreshHomeIfExists();
         Get.back();
       }
     } catch (e) {
       Get.snackbar('Error', 'Terjadi kesalahan: $e');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Refresh ringkasan & daftar stok di homepage storage (StorageHomeController)
+  /// supaya kartu-kartu di homepage langsung update begitu user balik dari
+  /// form ini, tanpa perlu pull-to-refresh manual.
+  void _refreshHomeIfExists() {
+    if (Get.isRegistered<StorageHomeController>()) {
+      Get.find<StorageHomeController>().refreshData();
     }
   }
 
@@ -238,8 +277,12 @@ class LaporanStokController extends GetxController {
         'Authorization': 'Bearer $_token',
       });
 
+      request.fields['stok_awal'] = data['stok_awal'].toString();
+      request.fields['stok_masuk'] = data['stok_masuk'].toString();
+      // Backend mewajibkan integer, jadi dibulatkan saat dikirim.
+      // Nilai desimal aslinya tetap tersimpan lokal (kolom REAL) untuk presisi.
       request.fields['jumlah_daging_jual'] =
-          data['jumlah_daging_jual'].toString();
+          (data['jumlah_daging_jual'] as double).round().toString();
       request.fields['detail_stok'] = data['detail_stok'];
       request.fields['tempat_pendistribusian'] =
           data['tempat_pendistribusian'];
@@ -293,6 +336,8 @@ class LaporanStokController extends GetxController {
     jumlahController.dispose();
     tempatDistribusiController.dispose();
     catatanController.dispose();
+    stokAwalController.dispose();
+    stokMasukController.dispose();
     super.onClose();
   }
 }
