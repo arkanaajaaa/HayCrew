@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
       ],
       locale: const Locale('id', 'ID'), 
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
+        colorScheme: ColorScheme.fromSeed( 
           seedColor: AppColors.primaryGreen,
         ),
         useMaterial3: true,
