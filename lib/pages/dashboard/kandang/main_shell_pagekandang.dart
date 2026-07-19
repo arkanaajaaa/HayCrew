@@ -5,7 +5,7 @@ import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/navbar_controller.dart';
 import 'package:haycrew_app/pages/dashboard/kandang/homepagekandang.dart';
 import 'package:haycrew_app/pages/dashboard/kandang/historypage.dart';
-import 'package:haycrew_app/pages/dashboard/kandang/profilepage.dart';
+import 'package:haycrew_app/pages/profilepage.dart';
 
 class MainShellPage extends StatelessWidget {
   const MainShellPage({Key? key}) : super(key: key);

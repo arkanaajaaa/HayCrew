@@ -12,7 +12,7 @@ import 'package:haycrew_app/pages/dashboard/storage/homepagestorage.dart';
 // Halaman Riwayat & Profil bisa dishare atau dibuat versi storage sendiri.
 // Untuk sekarang pakai placeholder dulu.
 import 'package:haycrew_app/pages/dashboard/kandang/historypage.dart';
-import 'package:haycrew_app/pages/dashboard/kandang/profilepage.dart';
+import 'package:haycrew_app/pages/profilepage.dart';
 
 class MainShellPageStorage extends StatelessWidget {
   const MainShellPageStorage({Key? key}) : super(key: key);

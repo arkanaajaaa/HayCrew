@@ -66,20 +66,7 @@ class ProfilController extends GetxController {
 
   // ─── Menu ─────────────────────────────────────────────────────────────────
   List<ProfilMenuItem> _buildMenuItems() => [
-    ProfilMenuItem(
-      icon: Icons.person_outline,
-      iconBgColor: AppColors.calendarBackground,
-      iconColor: AppColors.textDark,
-      title: 'Informasi Pribadi',
-      onTap: onTapInformasiPribadi,
-    ),
-    ProfilMenuItem(
-      icon: Icons.settings_outlined,
-      iconBgColor: AppColors.calendarBackground,
-      iconColor: AppColors.textDark,
-      title: 'Pengaturan Akun',
-      onTap: onTapPengaturanAkun,
-    ),
+
     ProfilMenuItem(
       icon: Icons.history,
       iconBgColor: AppColors.calendarBackground,
@@ -87,13 +74,7 @@ class ProfilController extends GetxController {
       title: 'Riwayat Aktivitas',
       onTap: onTapRiwayatAktivitas,
     ),
-    ProfilMenuItem(
-      icon: Icons.security_outlined,
-      iconBgColor: AppColors.calendarBackground,
-      iconColor: AppColors.lightGreen,
-      title: 'Keamanan',
-      onTap: onTapKeamanan,
-    ),
+
     ProfilMenuItem(
       icon: Icons.help_outline,
       iconBgColor: AppColors.calendarBackground,

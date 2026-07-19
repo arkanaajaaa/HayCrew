@@ -234,6 +234,8 @@ class _HomeStatusList extends StatelessWidget {
         );
       }
 
+      const int maxVisible = 8;
+      final visibleStatusList = controller.statusList.take(maxVisible).toList();
       return Column(
         children: controller.statusList.map((status) {
           return StatusCardWidget(

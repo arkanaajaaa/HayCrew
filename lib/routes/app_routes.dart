@@ -19,5 +19,5 @@ class AppRoutes {
   static const String PROFIL        = '/profil';
   static const String SETTINGS      = '/settings';
   static const String NOTIFICATIONS = '/notifications';
-  static const String INITIAL = SPLASH; 
+  static const String INITIAL = LOGIN; 
 }

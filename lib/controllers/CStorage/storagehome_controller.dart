@@ -180,7 +180,7 @@ class StorageHomeController extends GetxController {
     return [];
   }
 
-  Future<void> _fetchStokAyamFromLocal() async {
+   Future<void> _fetchStokAyamFromLocal() async {
     final tambahList = await _db.getAllTambahStok();
     final laporanList = await _db.getAllLaporanGudang();
 
@@ -190,7 +190,11 @@ class StorageHomeController extends GetxController {
     );
     final totalKeluar = laporanList.fold<int>(
       0,
-      (sum, item) => sum + ((item['jumlah_daging_jual'] as int?) ?? 0),
+      // jumlah_daging_jual kolomnya REAL (double) di SQLite, jadi harus
+      // di-cast ke num dulu baru dibulatkan ke int — cast langsung ke
+      // int? gagal karena tipe aslinya double, bukan int.
+      (sum, item) =>
+          sum + (((item['jumlah_daging_jual'] as num?)?.round()) ?? 0),
     );
 
     stokKeluar.value = totalKeluar;
