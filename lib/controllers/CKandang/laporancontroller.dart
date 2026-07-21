@@ -227,8 +227,10 @@ class LaporanController extends GetxController {
         await checkSiklusAktif();
         return true;
       }
+      print('TandaiPanen gagal: ${res.statusCode} - ${res.body}');
       return false;
-    } catch (_) {
+    } catch (e) {
+      print('TandaiPanen error: $e'); 
       return false;
     }
   }

@@ -2,14 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../constants/app_colors.dart';
 
-/// CAppBar — Reusable AppBar untuk semua halaman di HayCrew.
-///
-/// Penggunaan:
-/// ```dart
-/// appBar: CAppBar(title: 'Laporan Kandang'),
-/// appBar: CAppBar(title: 'Profil', showBackButton: false),
-/// appBar: CAppBar(title: 'Detail', actions: [IconButton(...)]),
-/// ```
 class CAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool showBackButton;
@@ -19,7 +11,6 @@ class CAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final VoidCallback? onBackPressed;
 
-  // Multi-line title — pakai ini jika judul 2 baris seperti "Permintaan\nDana / Barang"
   final bool multiLineTitle;
 
   const CAppBar({

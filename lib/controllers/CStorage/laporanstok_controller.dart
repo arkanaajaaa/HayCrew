@@ -43,19 +43,13 @@ class LaporanStokController extends GetxController {
 
   final _db = DBHelper();
 
-  // Form "Tambah Stok Daging" (dipakai di bottom sheet)
   final jenisController = TextEditingController();
   final bobotController = TextEditingController();
   final jumlahController = TextEditingController();
 
-  final tempatDistribusiController = TextEditingController();
-  final catatanController = TextEditingController();
+  final selectedTempatDistribusi = Rxn<String>();
 
-  // Wajib diisi backend: stok_awal & stok_masuk (integer).
-  // TODO: konfirmasi ke tim backend apakah satuannya ekor atau kg, lalu
-  // sesuaikan hint text di laporanstokpage.dart kalau perlu.
-  final stokAwalController = TextEditingController();
-  final stokMasukController = TextEditingController();
+  final catatanController = TextEditingController();
 
   final selectedDate = Rxn<DateTime>();
   final formattedDate = 'Pilih Tanggal'.obs;
@@ -65,12 +59,8 @@ class LaporanStokController extends GetxController {
   final isLoading = false.obs;
   final laporanGudangList = <Map<String, dynamic>>[].obs;
 
-  // List breakdown stok daging (Jenis / Bobot / Jumlah) yang ditambahkan user
   final stokDagingList = <StokDagingItem>[].obs;
 
-  /// Total kg daging (jumlah bobot x jumlah unit di semua baris).
-  /// Dikirim ke API sebagai `jumlah_daging_jual` — backend mewajibkan ini
-  /// berupa integer, jadi saat submit dibulatkan (lihat `_submitToApi`).
   double get totalDagingJual =>
       stokDagingList.fold(0.0, (sum, item) => sum + item.totalBobot);
 
@@ -103,10 +93,6 @@ class LaporanStokController extends GetxController {
       image.value = File(picked.path);
     }
   }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // STOK DAGING (list Jenis/Bobot/Jumlah)
-  // ═══════════════════════════════════════════════════════════════════════
 
   bool _validateStokDagingForm() {
     if (jenisController.text.trim().isEmpty ||
@@ -165,10 +151,6 @@ class LaporanStokController extends GetxController {
     stokDagingList.removeWhere((item) => item.id == id);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // SUBMIT LAPORAN
-  // ═══════════════════════════════════════════════════════════════════════
-
   bool _validate() {
     if (stokDagingList.isEmpty) {
       Get.snackbar(
@@ -178,28 +160,10 @@ class LaporanStokController extends GetxController {
       );
       return false;
     }
-    if (tempatDistribusiController.text.isEmpty || selectedDate.value == null) {
+    if (selectedTempatDistribusi.value == null || selectedDate.value == null) {
       Get.snackbar(
         'Error',
         'Mohon lengkapi semua field wajib (*).',
-        backgroundColor: Colors.red.shade100,
-      );
-      return false;
-    }
-    if (stokAwalController.text.trim().isEmpty ||
-        int.tryParse(stokAwalController.text.trim()) == null) {
-      Get.snackbar(
-        'Error',
-        'Stok Awal wajib diisi dengan angka.',
-        backgroundColor: Colors.red.shade100,
-      );
-      return false;
-    }
-    if (stokMasukController.text.trim().isEmpty ||
-        int.tryParse(stokMasukController.text.trim()) == null) {
-      Get.snackbar(
-        'Error',
-        'Stok Masuk wajib diisi dengan angka.',
         backgroundColor: Colors.red.shade100,
       );
       return false;
@@ -208,6 +172,7 @@ class LaporanStokController extends GetxController {
   }
 
   Future<void> submit() async {
+    debugPrint('SUBMIT DIPANGGIL, isLoading=${isLoading.value}');
     if (isLoading.value) return;
     if (!_validate()) return;
 
@@ -215,13 +180,11 @@ class LaporanStokController extends GetxController {
 
     final now = DateTime.now().toIso8601String();
     final localData = {
-      'stok_awal': int.parse(stokAwalController.text.trim()),
-      'stok_masuk': int.parse(stokMasukController.text.trim()),
       'jumlah_daging_jual': totalDagingJual,
       'detail_stok': jsonEncode(
         stokDagingList.map((item) => item.toJson()).toList(),
       ),
-      'tempat_pendistribusian': tempatDistribusiController.text,
+      'tempat_pendistribusian': selectedTempatDistribusi.value,
       'catatan': catatanController.text,
       'foto': image.value?.path,
       'tanggal': DateFormat('yyyy-MM-dd').format(selectedDate.value!),
@@ -251,15 +214,13 @@ class LaporanStokController extends GetxController {
         Get.back();
       }
     } catch (e) {
+      debugPrint('SUBMIT LAPORAN GUDANG ERROR: $e');
       Get.snackbar('Error', 'Terjadi kesalahan: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Refresh ringkasan & daftar stok di homepage storage (StorageHomeController)
-  /// supaya kartu-kartu di homepage langsung update begitu user balik dari
-  /// form ini, tanpa perlu pull-to-refresh manual.
   void _refreshHomeIfExists() {
     if (Get.isRegistered<StorageHomeController>()) {
       Get.find<StorageHomeController>().refreshData();
@@ -277,18 +238,19 @@ class LaporanStokController extends GetxController {
         'Authorization': 'Bearer $_token',
       });
 
-      request.fields['stok_awal'] = data['stok_awal'].toString();
-      request.fields['stok_masuk'] = data['stok_masuk'].toString();
-      // Backend mewajibkan integer, jadi dibulatkan saat dikirim.
-      // Nilai desimal aslinya tetap tersimpan lokal (kolom REAL) untuk presisi.
-      request.fields['jumlah_daging_jual'] =
-          (data['jumlah_daging_jual'] as double).round().toString();
-      request.fields['detail_stok'] = data['detail_stok'];
       request.fields['tempat_pendistribusian'] =
           data['tempat_pendistribusian'];
       request.fields['tanggal'] = data['tanggal'];
       if (data['catatan'] != null && data['catatan'].toString().isNotEmpty) {
         request.fields['catatan'] = data['catatan'];
+      }
+
+      // items[] sesuai format yang divalidasi Laravel
+      final items = jsonDecode(data['detail_stok']) as List;
+      for (int i = 0; i < items.length; i++) {
+        request.fields['items[$i][jenis]'] = items[i]['jenis'].toString();
+        request.fields['items[$i][bobot]'] = items[i]['bobot'].toString();
+        request.fields['items[$i][jumlah]'] = items[i]['jumlah'].toString();
       }
 
       if (data['foto'] != null && data['foto'].toString().isNotEmpty) {
@@ -334,10 +296,7 @@ class LaporanStokController extends GetxController {
     jenisController.dispose();
     bobotController.dispose();
     jumlahController.dispose();
-    tempatDistribusiController.dispose();
     catatanController.dispose();
-    stokAwalController.dispose();
-    stokMasukController.dispose();
     super.onClose();
   }
 }

@@ -68,10 +68,6 @@ class HomePageStorage extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HEADER — sama persis strukturnya dengan _HomeHeader di homepagekandang
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _StorageHeader extends StatelessWidget {
   final StorageHomeController controller;
   const _StorageHeader({required this.controller});
@@ -153,10 +149,6 @@ class _StorageHeader extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SUMMARY ROW — 3 kartu: Total | Menipis | Habis
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _StorageSummaryRow extends StatelessWidget {
   final StorageHomeController controller;
@@ -240,11 +232,6 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ACTION BUTTONS — Tambah Stok | Laporan Stok
-// Menggunakan CButton yang sama seperti di homepagekandang
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _StorageActionButtons extends StatelessWidget {
   final StorageHomeController controller;
   const _StorageActionButtons({required this.controller});
@@ -281,11 +268,6 @@ class _StorageActionButtons extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// STOK LIST — daftar item stok dengan indikator warna status
-// Pola Obx loading/empty/data sama persis dengan _HomeStatusList
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _StorageStokList extends StatelessWidget {
   final StorageHomeController controller;

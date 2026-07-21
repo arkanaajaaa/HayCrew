@@ -1,55 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 
-
-class CTextField extends StatelessWidget {
-  final TextEditingController controller;
+class CDropdownField<T> extends StatelessWidget {
+  final T? value;
   final String hintText;
   final String? labelText;
-  final IconData? prefixIcon;
-  final bool obscureText;
-  final TextInputType keyboardType;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
   final Color? fillColor;
   final Color? hintColor;
-  final List<TextInputFormatter>? inputFormatters;
-  final int maxLines;
-
-  // ─── Props baru ────────────────────────────────────────────────────────────
-  final ValueChanged<String>? onChanged;
-  final String? Function(String?)? validator;
   final bool enabled;
-  final Widget? suffixIcon;
-  
-  const CTextField({
+  final String? Function(T?)? validator;
+
+  final Color? dropdownColor;
+  final double menuBorderRadius;
+  final double elevation;
+  final TextStyle? itemTextStyle;
+
+  const CDropdownField({
     super.key,
-    required this.controller,
+    required this.value,
     required this.hintText,
+    required this.items,
+    required this.onChanged,
     this.labelText,
-    this.prefixIcon,
-    this.obscureText = false,
-    this.keyboardType = TextInputType.text,
     this.fillColor,
     this.hintColor,
-    this.inputFormatters,
-    this.maxLines = 1,
-    this.onChanged,
-    this.validator,
     this.enabled = true,
-    this.suffixIcon,
+    this.validator,
+    this.dropdownColor,
+    this.menuBorderRadius = 12,
+    this.elevation = 3,
+    this.itemTextStyle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      maxLines: maxLines,
-      enabled: enabled,
-      onChanged: onChanged,
+    return DropdownButtonFormField<T>(
+      value: value,
+      isExpanded: true,
+      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.primaryGreen),
+      items: items,
+      onChanged: enabled ? onChanged : null,
       validator: validator,
+      style: itemTextStyle ??
+          const TextStyle(color: Colors.black87, fontSize: 16),
+      // ── Tema popup menu (putih, field-nya sendiri tetap coklat) ──
+      dropdownColor: dropdownColor ?? Colors.white,
+      borderRadius: BorderRadius.circular(menuBorderRadius),
+      elevation: elevation.round(),
+      focusColor: Colors.transparent,
       decoration: InputDecoration(
         hintText: hintText,
         labelText: labelText,
@@ -57,8 +57,6 @@ class CTextField extends StatelessWidget {
           color: hintColor ?? AppColors.primaryGreen,
           fontSize: 16,
         ),
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
-        suffixIcon: suffixIcon,
         filled: true,
         fillColor: enabled
             ? (fillColor ?? AppColors.textFieldBg)

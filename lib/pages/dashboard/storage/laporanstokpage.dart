@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/controllers/CStorage/laporanstok_controller.dart';
 import 'package:haycrew_app/components/CTextfield.dart';
+import 'package:haycrew_app/components/CDropdownfield.dart';
 import 'package:haycrew_app/components/CButton.dart';
 import 'package:haycrew_app/components/CAppbar.dart';
 import 'package:haycrew_app/components/CDaterangepicker.dart';
@@ -33,41 +34,6 @@ class LaporanStokPage extends GetView<LaporanStokController> {
               ),
               const SizedBox(height: 18),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildLabel(theme, 'Stok Awal', required: true),
-                        const SizedBox(height: 6),
-                        CTextField(
-                          controller: controller.stokAwalController,
-                          hintText: '0',
-                          keyboardType: TextInputType.number,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildLabel(theme, 'Stok Masuk', required: true),
-                        const SizedBox(height: 6),
-                        CTextField(
-                          controller: controller.stokMasukController,
-                          hintText: '0',
-                          keyboardType: TextInputType.number,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-
               _buildLabel(theme, 'Stok Daging', required: true),
               const SizedBox(height: 8),
               _buildStokDagingHeader(context),
@@ -77,9 +43,18 @@ class LaporanStokPage extends GetView<LaporanStokController> {
 
               _buildLabel(theme, 'Tempat Pendistribusian', required: true),
               const SizedBox(height: 6),
-              CTextField(
-                controller: controller.tempatDistribusiController,
-                hintText: 'Contoh : Pasar Induk',
+              Obx(
+                () => CDropdownField<String>(
+                  value: controller.selectedTempatDistribusi.value,
+                  hintText: 'Pilih tempat pendistribusian',
+                  items: const [
+                    DropdownMenuItem(value: 'Bogor', child: Text('Bogor')),
+                    DropdownMenuItem(value: 'Depok', child: Text('Depok')),
+                  ],
+                  onChanged: (value) {
+                    controller.selectedTempatDistribusi.value = value;
+                  },
+                ),
               ),
               const SizedBox(height: 18),
 
@@ -137,15 +112,15 @@ class LaporanStokPage extends GetView<LaporanStokController> {
     );
   }
 
-  /// Header "Jenis / Bobot / Jumlah" + tombol "+" buat buka form tambah item.
+  /// Header "Jumlah / Jenis / Bobot" + tombol "+" buat buka form tambah item.
   Widget _buildStokDagingHeader(BuildContext context) {
     return Row(
       children: [
+        _headerChip('Jumlah'),
+        const SizedBox(width: 8),
         _headerChip('Jenis'),
         const SizedBox(width: 8),
         _headerChip('Bobot'),
-        const SizedBox(width: 8),
-        _headerChip('Jumlah'),
         const Spacer(),
         InkWell(
           borderRadius: BorderRadius.circular(24),

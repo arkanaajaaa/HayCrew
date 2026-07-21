@@ -63,7 +63,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     }
   }
 
-  // 1. Ditingkatkan menjadi 14 hari (2 minggu) agar bisa di-scroll
   List<DateTime> _getWeekDates() {
     return List.generate(
       10,
@@ -97,7 +96,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(
         vertical: 16,
-      ), // Padding horizontal dihapus agar scroll mepet tepi
+      ), 
       decoration: BoxDecoration(
         color: AppColors.calendarBackground,
         borderRadius: BorderRadius.circular(12),
@@ -166,16 +165,15 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  // 2. Menggunakan SingleChildScrollView agar bisa digeser (swipe)
   Widget _buildCalendarGrid(List<DateTime> weekDates) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 12), // Jarak awal scroll
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: weekDates.map((date) {
           return SizedBox(
-            width: 80, // Ukuran lebar kartu yang konsisten
+            width: 80,
             child: _buildDateCard(date),
           );
         }).toList(),

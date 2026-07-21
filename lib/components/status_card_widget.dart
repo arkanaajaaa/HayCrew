@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/status_permintaan_model.dart';
 import '../constants/app_colors.dart';
 
-/// Widget untuk menampilkan card status permintaan
-/// Reusable component yang bisa dipanggil dari mana saja
+
 class StatusCardWidget extends StatelessWidget {
   final StatusPermintaanModel status;
   final VoidCallback? onTap;

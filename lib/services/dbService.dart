@@ -20,7 +20,7 @@ class DBHelper {
 
     return await openDatabase(
       path,
-      version: 7, // naik dari 6 — tambah stok_awal & stok_masuk di laporan_gudang
+      version: 10, // naik dari 9 — buang kolom `items` legacy (NOT NULL) yang bikin semua insert gagal
       onCreate: (db, version) async {
         await _createLaporanKandangTable(db);
         await _createTambahStokTable(db);
@@ -38,9 +38,6 @@ class DBHelper {
         if (oldVersion < 4) {
           await _createStokTable(db);
         }
-        if (oldVersion < 5) {
-          await _migrateLaporanGudangStokDaging(db);
-        }
         if (oldVersion >= 2 && oldVersion < 6) {
           // hanya device yang tabel tambah_stok-nya sudah ada dengan schema
           // lama (tanggal_mulai/tanggal_selesai) yang perlu dimigrasi.
@@ -49,9 +46,18 @@ class DBHelper {
           // di dalam fungsi migrasi tetap dicek dulu apakah kolom lama ada.
           await _migrateTambahStokSingularDate(db);
         }
-        if (oldVersion < 7) {
-          await _migrateLaporanGudangStokAwalMasuk(db);
-        }
+
+        // Kolom-kolom laporan_gudang di bawah ini dulu digantung di belakang
+        // "if (oldVersion < X)" tertentu, tapi ada device yang user_version-nya
+        // udah kelewat angka X itu sebelum migrasinya sempet nambah kolom
+        // (jadi kolom hilang selamanya). Supaya self-healing dan nggak
+        // ketemu kasus serupa lagi ke depannya, migrasi-migrasi ini dijalanin
+        // tiap kali onUpgrade ke-trigger, terlepas dari oldVersion-nya berapa.
+        // Aman karena masing-masing sudah cek _columnExists sebelum ALTER.
+        await _migrateLaporanGudangStokDaging(db);
+        await _migrateLaporanGudangStokAwalMasuk(db);
+        await _migrateLaporanGudangJumlahDagingJual(db);
+        await _migrateLaporanGudangDropItemsColumn(db);
       },
     );
   }
@@ -92,6 +98,45 @@ class DBHelper {
         "ALTER TABLE laporan_gudang ADD COLUMN stok_masuk INTEGER DEFAULT 0",
       );
     }
+  }
+
+  /// Tambah kolom `jumlah_daging_jual` (REAL) ke tabel laporan_gudang.
+  /// Kolom ini ada di _createLaporanGudangTable untuk device baru, tapi
+  /// device lama yang tabelnya sudah lebih dulu ada (dibuat sebelum kolom
+  /// ini ditambahkan ke fungsi create) nggak pernah dapet kolom ini lewat
+  /// migrasi apa pun, jadi INSERT ke kolom itu gagal dengan error
+  /// "table laporan_gudang has no column named jumlah_daging_jual".
+  Future<void> _migrateLaporanGudangJumlahDagingJual(Database db) async {
+    if (!await _columnExists(db, 'laporan_gudang', 'jumlah_daging_jual')) {
+      await db.execute(
+        "ALTER TABLE laporan_gudang ADD COLUMN jumlah_daging_jual REAL NOT NULL DEFAULT 0",
+      );
+    }
+  }
+
+  /// Buang kolom `items` legacy di laporan_gudang kalau masih ada.
+  /// Kolom ini peninggalan skema lama, NOT NULL tanpa default, dan sudah
+  /// nggak pernah diisi sama kode manapun (diganti `detail_stok`) — akibatnya
+  /// SEMUA insert ke laporan_gudang gagal dengan
+  /// "NOT NULL constraint failed: laporan_gudang.items".
+  /// SQLite nggak bisa langsung drop/ubah NOT NULL lewat ALTER TABLE biasa,
+  /// jadi tabelnya di-rebuild: rename ke _old, buat ulang pakai skema
+  /// sekarang, copy data kolom yang relevan, baru drop tabel lama.
+  Future<void> _migrateLaporanGudangDropItemsColumn(Database db) async {
+    if (!await _columnExists(db, 'laporan_gudang', 'items')) return;
+
+    await db.execute('ALTER TABLE laporan_gudang RENAME TO laporan_gudang_old');
+    await _createLaporanGudangTable(db);
+    await db.execute('''
+      INSERT INTO laporan_gudang
+        (id, stok_awal, stok_masuk, jumlah_daging_jual, detail_stok,
+         tempat_pendistribusian, catatan, foto, tanggal, is_synced, created_at)
+      SELECT
+        id, stok_awal, stok_masuk, jumlah_daging_jual, detail_stok,
+        tempat_pendistribusian, catatan, foto, tanggal, is_synced, created_at
+      FROM laporan_gudang_old
+    ''');
+    await db.execute('DROP TABLE laporan_gudang_old');
   }
 
   Future<void> _migrateTambahStokSingularDate(Database db) async {

@@ -1,8 +1,3 @@
-/// lib/components/CStokItemCard.dart
-///
-/// CStokItemCard — kartu item stok reusable untuk dashboard Storage.
-/// Dipakai di HomePageStorage dan LaporanStokPage supaya tampilan konsisten.
-
 import 'package:flutter/material.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';

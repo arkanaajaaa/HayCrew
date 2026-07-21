@@ -2,14 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../constants/app_colors.dart';
 
-/// CSuccessSplash — Layar hijau full-screen dengan icon checklist bulat +
-/// pesan, muncul sesaat setelah submit berhasil, lalu hilang sendiri.
-///
-/// Cara pakai (di controller, setelah submit sukses):
-/// ```dart
-/// await CSuccessSplash.show(message: 'Laporan berhasil\ntersimpan');
-/// Get.back(); // balik ke halaman sebelumnya setelah splash selesai
-/// ```
 class CSuccessSplash extends StatelessWidget {
   final String message;
 
