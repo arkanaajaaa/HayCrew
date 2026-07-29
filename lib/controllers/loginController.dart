@@ -61,7 +61,14 @@ class LoginController extends GetxController {
           )
           .timeout(const Duration(seconds: 15));
 
-      final body = jsonDecode(response.body);
+      Map<String, dynamic> body;
+      try {
+        body = jsonDecode(response.body) as Map<String, dynamic>;
+      } on FormatException {
+        debugPrint('Non-JSON response (${response.statusCode}): ${response.body}');
+        _showError('Server tidak merespon dengan benar. Coba lagi nanti.');
+        return;
+      }
 
       if (response.statusCode == 200) {
         _storage.write('token', body['access_token']); 
