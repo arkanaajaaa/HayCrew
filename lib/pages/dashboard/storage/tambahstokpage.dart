@@ -24,8 +24,6 @@ class TambahStokPage extends GetView<TambahStokController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Single date -> controller.formattedDate / controller.selectDate
-              // (butuh TambahStokController diupdate + tabel tambah_stok
-              // dimigrasi ke kolom `tanggal` tunggal, lihat catatan di chat).
               Obx(
                 () => CDateRangePicker(
                   displayText: controller.formattedDate.value,
@@ -56,11 +54,53 @@ class TambahStokPage extends GetView<TambahStokController> {
               ),
               const SizedBox(height: 18),
 
+              // Dropdown Tempat Pendistribusian
               Text('Tempat Pendistribusian*', style: theme.textTheme.bodyMedium),
               const SizedBox(height: 6),
-              CTextField(
-                controller: controller.tempatDistribusiController,
-                hintText: 'Contoh : Pasar Induk',
+              Obx(
+                () => DropdownButtonFormField<String>(
+                  value: controller.selectedTempatDistribusi.value.isEmpty
+                      ? null
+                      : controller.selectedTempatDistribusi.value,
+                  hint: Text(
+                    'Pilih Tempat Pendistribusian',
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 14,
+                    ),
+                  ),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  items: controller.listTempatDistribusi.map((String item) {
+                    return DropdownMenuItem<String>(
+                      value: item,
+                      child: Text(item),
+                    );
+                  }).toList(),
+                  
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      controller.selectedTempatDistribusi.value = newValue;
+                    }
+                  },
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.primaryGreen),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 18),
 

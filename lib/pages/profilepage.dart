@@ -38,10 +38,6 @@ class ProfilPage extends GetView<ProfilController> {
           fontWeight: FontWeight.w600,
         ),
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.black),
-        onPressed: Get.back,
-      ),
     );
   }
 }

@@ -137,7 +137,6 @@ class LaporanStokPage extends GetView<LaporanStokController> {
     );
   }
 
-  /// Header "Jenis / Bobot / Jumlah" + tombol "+" buat buka form tambah item.
   Widget _buildStokDagingHeader(BuildContext context) {
     return Row(
       children: [
@@ -254,11 +253,51 @@ class LaporanStokPage extends GetView<LaporanStokController> {
             ),
             const SizedBox(height: 16),
 
-            const Text('Jenis'),
+            const Text('Jenis Daging', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
-            CTextField(
-              controller: controller.jenisController,
-              hintText: 'Contoh : Whole / Parting',
+
+            // Radio Button Pilihan Whole / Parting
+            Obx(
+              () => Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => controller.selectedJenis.value = 'Whole',
+                      child: Row(
+                        children: [
+                          Radio<String>(
+                            value: 'Whole',
+                            groupValue: controller.selectedJenis.value,
+                            activeColor: AppColors.primaryGreen,
+                            onChanged: (val) {
+                              if (val != null) controller.selectedJenis.value = val;
+                            },
+                          ),
+                          const Text('Whole'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => controller.selectedJenis.value = 'Parting',
+                      child: Row(
+                        children: [
+                          Radio<String>(
+                            value: 'Parting',
+                            groupValue: controller.selectedJenis.value,
+                            activeColor: AppColors.primaryGreen,
+                            onChanged: (val) {
+                              if (val != null) controller.selectedJenis.value = val;
+                            },
+                          ),
+                          const Text('Parting'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 14),
 

@@ -43,8 +43,10 @@ class LaporanStokController extends GetxController {
 
   final _db = DBHelper();
 
+  // Radio button state untuk jenis daging ("Whole" atau "Parting")
+  final selectedJenis = 'Whole'.obs;
+
   // Form "Tambah Stok Daging" (dipakai di bottom sheet)
-  final jenisController = TextEditingController();
   final bobotController = TextEditingController();
   final jumlahController = TextEditingController();
 
@@ -52,8 +54,6 @@ class LaporanStokController extends GetxController {
   final catatanController = TextEditingController();
 
   // Wajib diisi backend: stok_awal & stok_masuk (integer).
-  // TODO: konfirmasi ke tim backend apakah satuannya ekor atau kg, lalu
-  // sesuaikan hint text di laporanstokpage.dart kalau perlu.
   final stokAwalController = TextEditingController();
   final stokMasukController = TextEditingController();
 
@@ -109,7 +109,7 @@ class LaporanStokController extends GetxController {
   // ═══════════════════════════════════════════════════════════════════════
 
   bool _validateStokDagingForm() {
-    if (jenisController.text.trim().isEmpty ||
+    if (selectedJenis.value.trim().isEmpty ||
         bobotController.text.trim().isEmpty ||
         jumlahController.text.trim().isEmpty) {
       Get.snackbar(
@@ -149,13 +149,14 @@ class LaporanStokController extends GetxController {
     stokDagingList.add(
       StokDagingItem(
         id: DateTime.now().microsecondsSinceEpoch.toString(),
-        jenis: jenisController.text.trim(),
+        jenis: selectedJenis.value,
         bobot: bobot,
         jumlah: jumlah,
       ),
     );
 
-    jenisController.clear();
+    // Reset input form
+    selectedJenis.value = 'Whole';
     bobotController.clear();
     jumlahController.clear();
     Get.back(); // tutup bottom sheet tambah item
@@ -331,7 +332,6 @@ class LaporanStokController extends GetxController {
 
   @override
   void onClose() {
-    jenisController.dispose();
     bobotController.dispose();
     jumlahController.dispose();
     tempatDistribusiController.dispose();

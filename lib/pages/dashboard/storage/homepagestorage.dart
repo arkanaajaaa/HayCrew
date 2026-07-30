@@ -1,12 +1,3 @@
-/// lib/pages/dashboard/storage/homepagestorage.dart
-///
-/// Struktur mengikuti homepagekandang.dart:
-///   Scaffold
-///     ├── _StorageHeader  (salam + nama + notif)
-///     ├── _StorageSummaryRow  (kartu ringkasan stok)
-///     ├── _StorageActionButtons  (Tambah Stok | Laporan Stok)
-///     └── _StorageStokList  (daftar item stok)
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CButton.dart';

@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/navbar_controller.dart';
 import 'package:haycrew_app/pages/dashboard/kandang/homepagekandang.dart';
-import 'package:haycrew_app/pages/dashboard/kandang/historypage.dart';
 import 'package:haycrew_app/pages/profilepage.dart';
 
 class MainShellPage extends StatelessWidget {
@@ -17,7 +16,6 @@ class MainShellPage extends StatelessWidget {
     // Tiga halaman yang di-swap di body
     final List<Widget> pages = [
       const HomePageKandang(),
-      const HistoryPage(),
       const ProfilPage(),
     ];
 
@@ -25,7 +23,6 @@ class MainShellPage extends StatelessWidget {
       return Scaffold(
         // Body langsung swap berdasarkan index — tidak ada navigasi route
         body: pages[navController.currentNavIndex.value],
-
         bottomNavigationBar: _buildBottomNav(navController),
       );
     });
@@ -57,18 +54,11 @@ class MainShellPage extends StatelessWidget {
                 onTap: () => navController.changeTab(0),
               ),
               _buildNavItem(
-                icon: Icons.history,
-                label: 'Riwayat',
+                icon: Icons.person,
+                label: 'Profil',
                 index: 1,
                 currentIndex: navController.currentNavIndex.value,
                 onTap: () => navController.changeTab(1),
-              ),
-              _buildNavItem(
-                icon: Icons.person,
-                label: 'Profil',
-                index: 2,
-                currentIndex: navController.currentNavIndex.value,
-                onTap: () => navController.changeTab(2),
               ),
             ],
           ),

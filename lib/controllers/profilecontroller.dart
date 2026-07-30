@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart'; // 1. Tambahkan import ini
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
@@ -66,7 +67,6 @@ class ProfilController extends GetxController {
 
   // ─── Menu ─────────────────────────────────────────────────────────────────
   List<ProfilMenuItem> _buildMenuItems() => [
-
     ProfilMenuItem(
       icon: Icons.history,
       iconBgColor: AppColors.calendarBackground,
@@ -74,7 +74,6 @@ class ProfilController extends GetxController {
       title: 'Riwayat Aktivitas',
       onTap: onTapRiwayatAktivitas,
     ),
-
     ProfilMenuItem(
       icon: Icons.help_outline,
       iconBgColor: AppColors.calendarBackground,
@@ -93,11 +92,26 @@ class ProfilController extends GetxController {
   ];
 
   // ─── Actions ──────────────────────────────────────────────────────────────
-  void onTapInformasiPribadi() => _showComingSoon('Informasi Pribadi');
-  void onTapPengaturanAkun()   => _showComingSoon('Pengaturan Akun');
   void onTapRiwayatAktivitas() => _showComingSoon('Riwayat Aktivitas');
-  void onTapKeamanan()         => _showComingSoon('Keamanan');
-  void onTapPusatBantuan()     => _showComingSoon('Pusat Bantuan');
+
+  // 2. Perbarui method onTapPusatBantuan ke link WhatsApp
+  Future<void> onTapPusatBantuan() async {
+    const waUrl = 'https://wa.me/6281274734090'; // Menggunakan format nomor internasional +62
+    final uri = Uri.parse(waUrl);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication, // Buka langsung di aplikasi WA/browser eksternal
+        );
+      } else {
+        _showErrorSnackbar('Tidak dapat membuka WhatsApp');
+      }
+    } catch (e) {
+      _showErrorSnackbar('Terjadi kesalahan saat membuka tautan');
+    }
+  }
 
   void onTapKeluar() {
     if (isLoggingOut.value) return; // cegah double-tap pas dialog kebuka
@@ -123,11 +137,6 @@ class ProfilController extends GetxController {
     );
   }
 
-  /// Logout beneran: hapus token & data user dari GetStorage (bukan cuma
-  /// pindah halaman) supaya splash screen nggak nemuin sesi lama lagi pas
-  /// app dibuka ulang. Panggil endpoint /api/logout dulu (best-effort, kalau
-  /// gagal/timeout tetap lanjut hapus sesi lokal) sama persis kayak
-  /// LoginController.handleLogout().
   Future<void> _doLogout() async {
     if (isLoggingOut.value) return;
     isLoggingOut.value = true;
@@ -145,10 +154,7 @@ class ProfilController extends GetxController {
             },
           )
           .timeout(const Duration(seconds: 10));
-    } catch (_) {
-      // Diabaikan dengan sengaja: mau server-nya sukses atau gagal/offline,
-      // sesi lokal tetap harus dihapus supaya user beneran keluar.
-    }
+    } catch (_) {}
 
     await _storage.erase();
     Get.offAllNamed(AppRoutes.LOGIN);
@@ -162,6 +168,17 @@ class ProfilController extends GetxController {
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.blue[100],
       colorText: Colors.blue[900],
+      margin: const EdgeInsets.all(15),
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  void _showErrorSnackbar(String message) {
+    Get.snackbar(
+      'Gagal', message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red[100],
+      colorText: Colors.red[900],
       margin: const EdgeInsets.all(15),
       duration: const Duration(seconds: 2),
     );
