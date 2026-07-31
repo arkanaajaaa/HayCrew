@@ -180,7 +180,7 @@ class _ProfileHeaderCard extends GetView<ProfilController> {
   }
 }
 
-class _AvatarWidget extends StatelessWidget {
+class _AvatarWidget extends GetView<ProfilController> {
   const _AvatarWidget();
 
   @override
@@ -188,6 +188,7 @@ class _AvatarWidget extends StatelessWidget {
     return Container(
       width: 64,
       height: 64,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.primaryGreen,
         borderRadius: BorderRadius.circular(14),
@@ -199,7 +200,20 @@ class _AvatarWidget extends StatelessWidget {
           ),
         ],
       ),
-      child: const Icon(Icons.person, color: AppColors.white, size: 34),
+      child: Obx(() {
+        final url = controller.userPhotoUrl.value;
+        if (url == null || url.isEmpty) {
+          return const Icon(Icons.person, color: AppColors.white, size: 34);
+        }
+        return Image.network(
+          url,
+          width: 64,
+          height: 64,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) =>
+              const Icon(Icons.person, color: AppColors.white, size: 34),
+        );
+      }),
     );
   }
 }

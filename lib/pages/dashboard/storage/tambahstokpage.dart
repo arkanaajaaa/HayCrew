@@ -5,6 +5,7 @@ import 'package:haycrew_app/components/CTextfield.dart';
 import 'package:haycrew_app/components/CButton.dart';
 import 'package:haycrew_app/components/CAppbar.dart';
 import 'package:haycrew_app/components/CDaterangepicker.dart';
+import 'package:haycrew_app/components/CDropdownfield.dart';
 import 'package:haycrew_app/components/CUploadimagepage.dart';
 import '../../../constants/app_colors.dart';
 
@@ -23,7 +24,6 @@ class TambahStokPage extends GetView<TambahStokController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Single date -> controller.formattedDate / controller.selectDate
               Obx(
                 () => CDateRangePicker(
                   displayText: controller.formattedDate.value,
@@ -54,52 +54,18 @@ class TambahStokPage extends GetView<TambahStokController> {
               ),
               const SizedBox(height: 18),
 
-              // Dropdown Tempat Pendistribusian
               Text('Tempat Pendistribusian*', style: theme.textTheme.bodyMedium),
               const SizedBox(height: 6),
               Obx(
-                () => DropdownButtonFormField<String>(
-                  value: controller.selectedTempatDistribusi.value.isEmpty
-                      ? null
-                      : controller.selectedTempatDistribusi.value,
-                  hint: Text(
-                    'Pilih Tempat Pendistribusian',
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 14,
-                    ),
-                  ),
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                  items: controller.listTempatDistribusi.map((String item) {
-                    return DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(item),
-                    );
-                  }).toList(),
-                  
-                  onChanged: (String? newValue) {
+                () => CDropdownField(
+                  value: controller.selectedTempatDistribusi.value,
+                  hintText: 'Pilih Tempat Pendistribusian',
+                  items: controller.gudangOptions,
+                  onChanged: (newValue) {
                     if (newValue != null) {
                       controller.selectedTempatDistribusi.value = newValue;
                     }
                   },
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppColors.primaryGreen),
-                    ),
-                  ),
                 ),
               ),
               const SizedBox(height: 18),

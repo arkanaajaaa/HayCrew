@@ -38,6 +38,7 @@ class ProfilController extends GetxController {
   // ─── User Data — mandiri, tidak bergantung HomeController ─────────────────
   final userName = 'User'.obs;
   final userRole = 'Karyawan'.obs;
+  final userPhotoUrl = Rxn<String>();
 
   final joinDate = 'Karyawan sejak 12-02-2023'.obs;
   final isActive = true.obs;
@@ -57,6 +58,7 @@ class ProfilController extends GetxController {
     if (args != null) {
       userName.value = args['userName'] ?? 'User';
       userRole.value = args['userRole'] ?? 'Karyawan';
+      userPhotoUrl.value = args['userPhotoUrl'] as String?;
     }
   }
 

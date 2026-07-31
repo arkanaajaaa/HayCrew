@@ -9,30 +9,55 @@ import 'package:haycrew_app/routes/app_routes.dart';
 import 'package:haycrew_app/services/dbService.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
 
-/// Model sederhana untuk item stok storage
+/// Model item stok storage — field-nya mengikuti persis kolom tabel
+/// `stoks` di backend (lihat StokController::index / Stok model), bukan
+/// `nama`/`jumlah`/`satuan` seperti sebelumnya (field itu tidak pernah ada
+/// di response API sehingga selalu tampil kosong/0).
 class StokItemModel {
   final String id;
-  final String nama;
-  final int jumlah;
-  final String satuan;
+  final String jenis;
+  final double beratPerItem;
+  final int jumlahStok;
+  final double estimasiTotalBerat;
+  final String tanggalUpdate;
   final String status;
+  final String? picName;
 
   const StokItemModel({
     required this.id,
-    required this.nama,
-    required this.jumlah,
-    required this.satuan,
+    required this.jenis,
+    required this.beratPerItem,
+    required this.jumlahStok,
+    required this.estimasiTotalBerat,
+    required this.tanggalUpdate,
     required this.status,
+    this.picName,
   });
 
   factory StokItemModel.fromJson(Map<String, dynamic> json) {
     return StokItemModel(
       id: json['id']?.toString() ?? '',
-      nama: json['nama'] ?? '',
-      jumlah: json['jumlah'] ?? 0,
-      satuan: json['satuan'] ?? '',
+      jenis: json['jenis']?.toString() ?? '',
+      beratPerItem: _toDouble(json['berat_per_item']),
+      jumlahStok: _toInt(json['jumlah_stok']),
+      estimasiTotalBerat: _toDouble(json['estimasi_total_berat']),
+      tanggalUpdate: json['tanggal_update']?.toString() ?? '',
       status: json['status'] ?? 'aman',
+      picName: json['user'] is Map ? json['user']['name']?.toString() : null,
     );
+  }
+
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0;
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    return double.tryParse(v.toString()) ?? 0;
+  }
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    return int.tryParse(v.toString()) ?? 0;
   }
 }
 
@@ -53,8 +78,9 @@ class StorageHomeController extends GetxController {
 
   int get totalItem => stokList.length;
   int get itemAman => stokList.where((s) => s.status == 'aman').length;
-  int get itemMenipis => stokList.where((s) => s.status == 'menipis').length;
-  int get itemHabis => stokList.where((s) => s.status == 'habis').length;
+  int get itemWaspada => stokList.where((s) => s.status == 'waspada').length;
+  int get itemTidakAman =>
+      stokList.where((s) => s.status == 'tidak aman').length;
 
   @override
   void onInit() {
@@ -231,12 +257,26 @@ class StorageHomeController extends GetxController {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: Text(item.nama),
+        title: Text(item.jenis),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Jumlah : ${item.jumlah} ${item.satuan}'),
+            Text('Berat per Item : ${_formatBerat(item.beratPerItem)} kg'),
+            const SizedBox(height: 8),
+            Text('Jumlah Stok : ${item.jumlahStok} pcs'),
+            const SizedBox(height: 8),
+            Text(
+              'Estimasi Total Berat : ${_formatBerat(item.estimasiTotalBerat)} kg',
+            ),
+            if (item.tanggalUpdate.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Tanggal Diperbaharui : ${item.tanggalUpdate}'),
+            ],
+            if ((item.picName ?? '').isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('PIC : ${item.picName}'),
+            ],
             const SizedBox(height: 8),
             Text('Status : ${_statusLabel(item.status)}'),
           ],
@@ -246,14 +286,22 @@ class StorageHomeController extends GetxController {
     );
   }
 
+  // Format angka berat sama seperti di LaporanStokController: tanpa desimal
+  // kalau bulat, satu desimal kalau tidak, dan pakai koma ala Indonesia.
+  String _formatBerat(double value) {
+    return value
+        .toStringAsFixed(value.truncateToDouble() == value ? 0 : 1)
+        .replaceAll('.', ',');
+  }
+
   String _statusLabel(String status) {
     switch (status) {
       case 'aman':
         return '✅ Aman';
-      case 'menipis':
-        return '⚠️ Menipis';
-      case 'habis':
-        return '❌ Habis';
+      case 'waspada':
+        return '⚠️ Waspada';
+      case 'tidak aman':
+        return '❌ Tidak Aman';
       default:
         return status;
     }

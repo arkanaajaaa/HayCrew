@@ -146,7 +146,7 @@ class _StorageHeader extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SUMMARY ROW — 3 kartu: Total | Menipis | Habis
+// SUMMARY ROW — Stok Ayam (ekor) | Stok Keluar (ekor)
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _StorageSummaryRow extends StatelessWidget {

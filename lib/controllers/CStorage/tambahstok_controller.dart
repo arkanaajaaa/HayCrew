@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:haycrew_app/services/dbService.dart';
+import 'package:haycrew_app/services/gudang_service.dart';
 import 'package:haycrew_app/components/CSuccessSplash.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
@@ -19,12 +20,11 @@ class TambahStokController extends GetxController {
 
   final stokMasukController = TextEditingController();
 
-  // Dropdown Tempat Pendistribusian
+  // Dropdown Tempat Pendistribusian — daftar gudangnya diambil dari
+  // backend (GudangService) biar ikut nambah kalau admin nambah gudang
+  // baru, dipakai bareng dengan LaporanStokController biar konsisten.
   final RxString selectedTempatDistribusi = ''.obs;
-  final List<String> listTempatDistribusi = [
-    'Gudang Depok',
-    'Gudang Bogor',
-  ];
+  final gudangOptions = <String>[...GudangService.fallback].obs;
 
   final catatanController = TextEditingController();
 
@@ -43,6 +43,11 @@ class TambahStokController extends GetxController {
   void onInit() {
     super.onInit();
     fetchTambahStok();
+    _loadGudangOptions();
+  }
+
+  Future<void> _loadGudangOptions() async {
+    gudangOptions.value = await GudangService.fetchGudangNames(_token);
   }
 
   Future<void> selectDate() async {
@@ -158,19 +163,15 @@ class TambahStokController extends GetxController {
         'Authorization': 'Bearer $_token',
       });
 
-      final keterangan = [
-        'Tempat distribusi: ${data['tempat_pendistribusian']}',
-        if ((data['catatan'] as String?)?.isNotEmpty ?? false) data['catatan'],
-      ].join('. ');
-
       request.fields['nama_permintaan'] = 'Tambah Stok Ayam';
       request.fields['tipe'] = 'barang';
       request.fields['tanggal'] = data['tanggal'];
       request.fields['jumlah'] = data['stok_masuk'].toString();
-      request.fields['keterangan'] = keterangan;
-
       request.fields['tempat_pendistribusian'] =
           data['tempat_pendistribusian'];
+      if (data['catatan'] != null && data['catatan'].toString().isNotEmpty) {
+        request.fields['catatan'] = data['catatan'];
+      }
 
       if (data['foto'] != null && data['foto'].toString().isNotEmpty) {
         final file = File(data['foto']);

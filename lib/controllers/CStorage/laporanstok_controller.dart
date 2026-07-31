@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:haycrew_app/services/dbService.dart';
+import 'package:haycrew_app/services/gudang_service.dart';
 import 'package:haycrew_app/components/CSuccessSplash.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
@@ -50,12 +51,12 @@ class LaporanStokController extends GetxController {
   final bobotController = TextEditingController();
   final jumlahController = TextEditingController();
 
-  final tempatDistribusiController = TextEditingController();
+  // Dropdown Tempat Pendistribusian — daftar gudangnya diambil dari
+  // backend (GudangService) biar ikut nambah kalau admin nambah gudang
+  // baru, dipakai bareng dengan TambahStokController biar konsisten.
+  final RxString selectedTempatDistribusi = ''.obs;
+  final gudangOptions = <String>[...GudangService.fallback].obs;
   final catatanController = TextEditingController();
-
-  // Wajib diisi backend: stok_awal & stok_masuk (integer).
-  final stokAwalController = TextEditingController();
-  final stokMasukController = TextEditingController();
 
   final selectedDate = Rxn<DateTime>();
   final formattedDate = 'Pilih Tanggal'.obs;
@@ -78,6 +79,11 @@ class LaporanStokController extends GetxController {
   void onInit() {
     super.onInit();
     fetchLaporanGudang();
+    _loadGudangOptions();
+  }
+
+  Future<void> _loadGudangOptions() async {
+    gudangOptions.value = await GudangService.fetchGudangNames(_token);
   }
 
   Future<void> selectDate() async {
@@ -179,28 +185,10 @@ class LaporanStokController extends GetxController {
       );
       return false;
     }
-    if (tempatDistribusiController.text.isEmpty || selectedDate.value == null) {
+    if (selectedTempatDistribusi.value.isEmpty || selectedDate.value == null) {
       Get.snackbar(
         'Error',
         'Mohon lengkapi semua field wajib (*).',
-        backgroundColor: Colors.red.shade100,
-      );
-      return false;
-    }
-    if (stokAwalController.text.trim().isEmpty ||
-        int.tryParse(stokAwalController.text.trim()) == null) {
-      Get.snackbar(
-        'Error',
-        'Stok Awal wajib diisi dengan angka.',
-        backgroundColor: Colors.red.shade100,
-      );
-      return false;
-    }
-    if (stokMasukController.text.trim().isEmpty ||
-        int.tryParse(stokMasukController.text.trim()) == null) {
-      Get.snackbar(
-        'Error',
-        'Stok Masuk wajib diisi dengan angka.',
         backgroundColor: Colors.red.shade100,
       );
       return false;
@@ -216,13 +204,11 @@ class LaporanStokController extends GetxController {
 
     final now = DateTime.now().toIso8601String();
     final localData = {
-      'stok_awal': int.parse(stokAwalController.text.trim()),
-      'stok_masuk': int.parse(stokMasukController.text.trim()),
       'jumlah_daging_jual': totalDagingJual,
       'detail_stok': jsonEncode(
         stokDagingList.map((item) => item.toJson()).toList(),
       ),
-      'tempat_pendistribusian': tempatDistribusiController.text,
+      'tempat_pendistribusian': selectedTempatDistribusi.value,
       'catatan': catatanController.text,
       'foto': image.value?.path,
       'tanggal': DateFormat('yyyy-MM-dd').format(selectedDate.value!),
@@ -278,18 +264,21 @@ class LaporanStokController extends GetxController {
         'Authorization': 'Bearer $_token',
       });
 
-      request.fields['stok_awal'] = data['stok_awal'].toString();
-      request.fields['stok_masuk'] = data['stok_masuk'].toString();
-      // Backend mewajibkan integer, jadi dibulatkan saat dikirim.
-      // Nilai desimal aslinya tetap tersimpan lokal (kolom REAL) untuk presisi.
-      request.fields['jumlah_daging_jual'] =
-          (data['jumlah_daging_jual'] as double).round().toString();
-      request.fields['detail_stok'] = data['detail_stok'];
       request.fields['tempat_pendistribusian'] =
           data['tempat_pendistribusian'];
       request.fields['tanggal'] = data['tanggal'];
       if (data['catatan'] != null && data['catatan'].toString().isNotEmpty) {
         request.fields['catatan'] = data['catatan'];
+      }
+
+      // Backend mengharapkan 'items' sebagai array (items[i][jenis] dst),
+      // bukan JSON string tunggal — makanya diambil langsung dari
+      // stokDagingList, bukan dari data['detail_stok'].
+      for (var i = 0; i < stokDagingList.length; i++) {
+        final item = stokDagingList[i];
+        request.fields['items[$i][jenis]'] = item.jenis;
+        request.fields['items[$i][bobot]'] = item.bobot.toString();
+        request.fields['items[$i][jumlah]'] = item.jumlah.toString();
       }
 
       if (data['foto'] != null && data['foto'].toString().isNotEmpty) {
@@ -334,10 +323,7 @@ class LaporanStokController extends GetxController {
   void onClose() {
     bobotController.dispose();
     jumlahController.dispose();
-    tempatDistribusiController.dispose();
     catatanController.dispose();
-    stokAwalController.dispose();
-    stokMasukController.dispose();
     super.onClose();
   }
 }

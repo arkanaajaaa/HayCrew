@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import '../routes/app_routes.dart';
+import '../utils/name_utils.dart';
 
 class LoginController extends GetxController {
   static const String baseUrl = 'http://103.253.212.178';
@@ -74,8 +75,10 @@ class LoginController extends GetxController {
         _storage.write('token', body['access_token']); 
         _storage.write('user', body['data']); 
 
-        final name = body['data']['name'] ?? 'User'; 
-        final role = body['data']['role'] ?? ''; 
+        final name = nicknameFrom(body['data']['name']);
+        final role = body['data']['role'] ?? '';
+        final fotoUrl = body['data']['foto_url'] as String?;
+        final email = body['data']['email'] as String?;
 
         Get.snackbar(
           'Berhasil',
@@ -87,7 +90,13 @@ class LoginController extends GetxController {
           duration: const Duration(seconds: 2),
         );
 
-        _navigateByRole(role: role, userName: name, userId: body['data']['id'].toString());
+        _navigateByRole(
+          role: role,
+          userName: name,
+          userId: body['data']['id'].toString(),
+          userPhotoUrl: fotoUrl,
+          userEmail: email,
+        );
     } else {
       final message = body['message'] ?? 'Login gagal';
       debugPrint('Login error: $message');
@@ -108,8 +117,16 @@ class LoginController extends GetxController {
     required String role,
     required String userName,
     required String userId,
+    String? userPhotoUrl,
+    String? userEmail,
   }) {
-    final args = {'userName': userName, 'userRole': role, 'userId': userId};
+    final args = {
+      'userName': userName,
+      'userRole': role,
+      'userId': userId,
+      'userPhotoUrl': userPhotoUrl,
+      'userEmail': userEmail,
+    };
 
     switch (role.toLowerCase()) {
       case 'kandang':

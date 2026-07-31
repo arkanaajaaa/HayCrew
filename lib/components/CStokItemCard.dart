@@ -18,9 +18,9 @@ class CStokItemCard extends StatelessWidget {
     switch (status) {
       case 'aman':
         return AppColors.lightGreen;
-      case 'menipis':
+      case 'waspada':
         return AppColors.orange;
-      case 'habis':
+      case 'tidak aman':
         return AppColors.red;
       default:
         return AppColors.primaryGreen;
@@ -31,9 +31,9 @@ class CStokItemCard extends StatelessWidget {
     switch (status) {
       case 'aman':
         return Icons.check_circle_outline;
-      case 'menipis':
+      case 'waspada':
         return Icons.warning_amber_outlined;
-      case 'habis':
+      case 'tidak aman':
         return Icons.remove_circle_outline;
       default:
         return Icons.help_outline;
@@ -44,13 +44,21 @@ class CStokItemCard extends StatelessWidget {
     switch (status) {
       case 'aman':
         return 'Aman';
-      case 'menipis':
-        return 'Menipis';
-      case 'habis':
-        return 'Habis';
+      case 'waspada':
+        return 'Waspada';
+      case 'tidak aman':
+        return 'Tidak Aman';
       default:
         return status;
     }
+  }
+
+  // Format sama seperti StorageHomeController._formatBerat: tanpa desimal
+  // kalau bulat, satu desimal kalau tidak, pakai koma ala Indonesia.
+  static String _formatBerat(double value) {
+    return value
+        .toStringAsFixed(value.truncateToDouble() == value ? 0 : 1)
+        .replaceAll('.', ',');
   }
 
   @override
@@ -92,7 +100,7 @@ class CStokItemCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.nama,
+                    '${item.jenis} ${_formatBerat(item.beratPerItem)} kg',
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -101,7 +109,7 @@ class CStokItemCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${item.jumlah} ${item.satuan}',
+                    '${item.jumlahStok} pcs • ${_formatBerat(item.estimasiTotalBerat)} kg',
                     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   ),
                 ],
