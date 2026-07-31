@@ -7,11 +7,13 @@ import '../services/google_calender_service.dart';
 class CalendarWidget extends StatefulWidget {
   final Function(DateTime)? onDateSelected;
   final bool enableGoogleCalendar;
+  final String? registeredEmail;
 
   const CalendarWidget({
     Key? key,
     this.onDateSelected,
     this.enableGoogleCalendar = true,
+    this.registeredEmail,
   }) : super(key: key);
 
   @override
@@ -44,10 +46,13 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     setState(() => _isLoading = true);
     try {
       if (!_calendarService.isSignedIn) {
-        final signedIn = await _calendarService.signIn();
-        if (!signedIn) {
-          setState(() => _isLoading = false);
-          return;
+        final silentlySignedIn = await _calendarService.signInSilently();
+        if (!silentlySignedIn) {
+          final signedIn = await _calendarService.signIn();
+          if (!signedIn) {
+            setState(() => _isLoading = false);
+            return;
+          }
         }
       }
       final events = await _calendarService.getEventsForWeek(
@@ -120,6 +125,10 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }
 
   Widget _buildHeader() {
+    final isConnected = widget.enableGoogleCalendar &&
+        _calendarService.isSignedIn &&
+        _calendarService.emailMatches(widget.registeredEmail);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -129,6 +138,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         ),
         Row(
           children: [
+            if (isConnected) ...[
+              const Icon(
+                Icons.check_circle,
+                size: 16,
+                color: AppColors.primaryGreen,
+              ),
+              const SizedBox(width: 8),
+            ],
             IconButton(
               icon: const Icon(Icons.chevron_left, size: 20),
               onPressed: _previousWeek,

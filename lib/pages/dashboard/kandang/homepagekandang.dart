@@ -32,6 +32,7 @@ class HomePageKandang extends StatelessWidget {
                         onDateSelected: (date) =>
                             print('Selected date: $date'),
                         enableGoogleCalendar: true,
+                        registeredEmail: controller.userEmail.value,
                       ),
                       _HomeActionButtons(controller: controller),
                       const SizedBox(height: 24),
@@ -237,7 +238,7 @@ class _HomeStatusList extends StatelessWidget {
       const int maxVisible = 8;
       final visibleStatusList = controller.statusList.take(maxVisible).toList();
       return Column(
-        children: controller.statusList.map((status) {
+        children: visibleStatusList.map((status) {
           return StatusCardWidget(
             status: status,
             onTap: () => controller.navigateToDetail(status),

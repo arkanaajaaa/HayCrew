@@ -19,6 +19,7 @@ class HomeController extends GetxController {
   final userName = 'User'.obs;
   final userRole = 'Karyawan'.obs;
   final userId = ''.obs;
+  final userEmail = ''.obs;
 
   @override
   void onInit() {
@@ -33,6 +34,7 @@ class HomeController extends GetxController {
     userName.value = args['userName'] ?? 'User';
     userRole.value = args['userRole'] ?? 'Karyawan';
     userId.value = args['userId'] ?? '';
+    userEmail.value = args['userEmail'] ?? '';
   }
 
   Future<void> loadStatusPermintaan() async {
@@ -68,6 +70,7 @@ class HomeController extends GetxController {
               'description': item.tipe == 'dana'
                   ? 'Dana: Rp ${item.harga ?? 0}'
                   : 'Barang: ${item.jumlah ?? 0} pcs',
+              'alasan_tolak': item.alasanTolak,
             }),
           )
           .toList();
@@ -153,13 +156,34 @@ class HomeController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Status: ${status.status.toString().split('.').last}'),
+            Text('Status: ${_statusLabel(status.status)}'),
             const SizedBox(height: 8),
             Text(status.description ?? 'Tidak ada deskripsi'),
+            if (status.status == StatusType.rejected &&
+                (status.alasanTolak?.isNotEmpty ?? false)) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Alasan Penolakan',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Text(status.alasanTolak!),
+            ],
           ],
         ),
         actions: [TextButton(onPressed: Get.back, child: const Text('OK'))],
       ),
     );
+  }
+
+  String _statusLabel(StatusType type) {
+    switch (type) {
+      case StatusType.accepted:
+        return 'Diterima';
+      case StatusType.pending:
+        return 'Pending';
+      case StatusType.rejected:
+        return 'Ditolak';
+    }
   }
 }

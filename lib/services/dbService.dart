@@ -20,7 +20,7 @@ class DBHelper {
 
     return await openDatabase(
       path,
-      version: 7, // naik dari 6 — tambah stok_awal & stok_masuk di laporan_gudang
+      version: 8, // naik dari 7 — skema tabel stok disesuaikan sama kolom tabel `stoks` di backend
       onCreate: (db, version) async {
         await _createLaporanKandangTable(db);
         await _createTambahStokTable(db);
@@ -51,6 +51,9 @@ class DBHelper {
         }
         if (oldVersion < 7) {
           await _migrateLaporanGudangStokAwalMasuk(db);
+        }
+        if (oldVersion < 8) {
+          await _migrateStokTable(db);
         }
       },
     );
@@ -92,6 +95,16 @@ class DBHelper {
         "ALTER TABLE laporan_gudang ADD COLUMN stok_masuk INTEGER DEFAULT 0",
       );
     }
+  }
+
+  /// Tabel `stok` sebelumnya punya kolom nama/jumlah/satuan yang tidak
+  /// pernah cocok dengan response API (lihat StokItemModel) — jadi cache
+  /// lamanya dibuang lalu dibuat ulang dengan skema yang benar. Aman
+  /// karena tabel ini murni cache read-through dari server, bukan data
+  /// draft/offline milik user.
+  Future<void> _migrateStokTable(Database db) async {
+    await db.execute('DROP TABLE IF EXISTS stok');
+    await _createStokTable(db);
   }
 
   Future<void> _migrateTambahStokSingularDate(Database db) async {
@@ -198,12 +211,15 @@ class DBHelper {
   Future<void> _createStokTable(Database db) async {
     // id disimpan sebagai TEXT karena berasal dari server (bukan digenerate lokal),
     // jadi bukan INTEGER PRIMARY KEY AUTOINCREMENT seperti tabel-tabel lain di atas.
+    // Kolom-kolomnya mengikuti tabel `stoks` di backend (lihat Stok model).
     await db.execute('''
       CREATE TABLE IF NOT EXISTS stok(
         id TEXT PRIMARY KEY,
-        nama TEXT NOT NULL,
-        jumlah INTEGER NOT NULL,
-        satuan TEXT,
+        jenis TEXT NOT NULL,
+        berat_per_item REAL NOT NULL DEFAULT 0,
+        jumlah_stok INTEGER NOT NULL DEFAULT 0,
+        estimasi_total_berat REAL NOT NULL DEFAULT 0,
+        tanggal_update TEXT,
         status TEXT NOT NULL
       )
     ''');
@@ -356,11 +372,17 @@ class DBHelper {
         'stok',
         {
           'id': item['id']?.toString() ?? '',
-          'nama': item['nama'] ?? '',
-          'jumlah': item['jumlah'] is int
-              ? item['jumlah']
-              : int.tryParse(item['jumlah']?.toString() ?? '') ?? 0,
-          'satuan': item['satuan'] ?? '',
+          'jenis': item['jenis']?.toString() ?? '',
+          'berat_per_item': item['berat_per_item'] is num
+              ? (item['berat_per_item'] as num).toDouble()
+              : double.tryParse(item['berat_per_item']?.toString() ?? '') ?? 0,
+          'jumlah_stok': item['jumlah_stok'] is int
+              ? item['jumlah_stok']
+              : int.tryParse(item['jumlah_stok']?.toString() ?? '') ?? 0,
+          'estimasi_total_berat': item['estimasi_total_berat'] is num
+              ? (item['estimasi_total_berat'] as num).toDouble()
+              : double.tryParse(item['estimasi_total_berat']?.toString() ?? '') ?? 0,
+          'tanggal_update': item['tanggal_update']?.toString(),
           'status': item['status'] ?? 'aman',
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
@@ -371,6 +393,6 @@ class DBHelper {
 
   Future<List<Map<String, dynamic>>> getAllStok() async {
     final client = await db;
-    return client.query('stok', orderBy: 'nama ASC');
+    return client.query('stok', orderBy: 'tanggal_update DESC');
   }
 }

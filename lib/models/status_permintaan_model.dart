@@ -7,6 +7,7 @@ class StatusPermintaanModel {
   final StatusType status;
   final DateTime createdAt;
   final String? description;
+  final String? alasanTolak;
 
   StatusPermintaanModel({
     required this.id,
@@ -17,6 +18,7 @@ class StatusPermintaanModel {
     required this.status,
     required this.createdAt,
     this.description,
+    this.alasanTolak,
   });
 
   /// From JSON (untuk data dari API)
@@ -32,6 +34,7 @@ class StatusPermintaanModel {
           ? DateTime.parse(json['created_at']) 
           : DateTime.now(),
       description: json['description'],
+      alasanTolak: json['alasan_tolak'],
     );
   }
 
@@ -46,6 +49,7 @@ class StatusPermintaanModel {
       'status': status.toString().split('.').last,
       'created_at': createdAt.toIso8601String(),
       'description': description,
+      'alasan_tolak': alasanTolak,
     };
   }
 
@@ -75,6 +79,7 @@ class StatusPermintaanModel {
     StatusType? status,
     DateTime? createdAt,
     String? description,
+    String? alasanTolak,
   }) {
     return StatusPermintaanModel(
       id: id ?? this.id,
@@ -85,6 +90,7 @@ class StatusPermintaanModel {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       description: description ?? this.description,
+      alasanTolak: alasanTolak ?? this.alasanTolak,
     );
   }
 }

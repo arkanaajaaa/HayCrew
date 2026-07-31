@@ -15,17 +15,38 @@ class GoogleCalendarService {
   GoogleSignInAccount? _currentUser;
   cal.CalendarApi? _calendarApi;
 
-  /// Sign in dengan Google
+  Future<void> _setupApi(GoogleSignInAccount account) async {
+    _currentUser = account;
+    final authHeaders = await account.authHeaders;
+    final authenticateClient = GoogleAuthClient(authHeaders);
+    _calendarApi = cal.CalendarApi(authenticateClient);
+  }
+
+  /// Coba nyambung otomatis pakai sesi Google yang sudah pernah dipilih
+  /// sebelumnya, tanpa munculin picker akun. Dipanggil duluan sebelum
+  /// signIn() supaya user nggak perlu pilih akun/login ulang tiap kali
+  /// halaman di-refresh atau dibuka lagi — google_sign_in yang nyimpen
+  /// sesinya, bukan kita.
+  Future<bool> signInSilently() async {
+    try {
+      final account = await _googleSignIn.signInSilently();
+      if (account == null) return false;
+
+      await _setupApi(account);
+      return true;
+    } catch (e) {
+      print('Error silent sign-in: $e');
+      return false;
+    }
+  }
+
+  /// Sign in dengan Google (munculin picker akun)
   Future<bool> signIn() async {
     try {
       final account = await _googleSignIn.signIn();
       if (account == null) return false;
 
-      _currentUser = account;
-      final authHeaders = await account.authHeaders;
-      final authenticateClient = GoogleAuthClient(authHeaders);
-      _calendarApi = cal.CalendarApi(authenticateClient);
-      
+      await _setupApi(account);
       return true;
     } catch (e) {
       print('Error signing in: $e');
@@ -42,6 +63,19 @@ class GoogleCalendarService {
   bool get isSignedIn => _currentUser != null;
 
   GoogleSignInAccount? get currentUser => _currentUser;
+
+  /// True kalau email akun Google yang lagi nyambung sama persis dengan
+  /// email yang terdaftar di HayCrew (case-insensitive) — dipakai buat
+  /// nunjukin kalender ini otomatis "kedetect" punya akun yang sama,
+  /// tanpa perlu verifikasi manual lagi.
+  bool emailMatches(String? registeredEmail) {
+    if (_currentUser == null ||
+        registeredEmail == null ||
+        registeredEmail.isEmpty) {
+      return false;
+    }
+    return _currentUser!.email.toLowerCase() == registeredEmail.toLowerCase();
+  }
 
   Future<List<CalendarEventModel>> getEventsForDate(DateTime date) async {
     if (_calendarApi == null) return [];

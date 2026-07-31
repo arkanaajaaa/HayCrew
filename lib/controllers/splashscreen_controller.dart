@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
+import 'package:haycrew_app/utils/name_utils.dart';
 
 /// SplashscreenController — cek sesi login yang tersimpan (token + user)
 /// begitu app dibuka. Kalau masih valid, langsung lempar ke dashboard yang
@@ -33,10 +34,18 @@ class SplashscreenController extends GetxController {
     }
 
     final role = (user['role'] ?? '').toString().toLowerCase();
-    final name = user['name'] ?? 'User';
+    final name = nicknameFrom(user['name']?.toString());
     final userId = user['id']?.toString() ?? '';
+    final photoUrl = user['foto_url']?.toString();
+    final email = user['email']?.toString();
 
-    final args = {'userName': name, 'userRole': role, 'userId': userId};
+    final args = {
+      'userName': name,
+      'userRole': role,
+      'userId': userId,
+      'userPhotoUrl': photoUrl,
+      'userEmail': email,
+    };
 
     switch (role) {
       case 'kandang':
