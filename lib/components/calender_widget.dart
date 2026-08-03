@@ -2,18 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_colors.dart';
 import '../models/calender_event_model.dart';
-import '../services/google_calender_service.dart';
+import '../services/calender_service.dart';
 
 class CalendarWidget extends StatefulWidget {
   final Function(DateTime)? onDateSelected;
-  final bool enableGoogleCalendar;
-  final String? registeredEmail;
+  final String token;
 
   const CalendarWidget({
     Key? key,
     this.onDateSelected,
-    this.enableGoogleCalendar = true,
-    this.registeredEmail,
+    required this.token,
   }) : super(key: key);
 
   @override
@@ -21,7 +19,6 @@ class CalendarWidget extends StatefulWidget {
 }
 
 class _CalendarWidgetState extends State<CalendarWidget> {
-  final GoogleCalendarService _calendarService = GoogleCalendarService();
   Map<DateTime, List<CalendarEventModel>> _events = {};
   DateTime _selectedWeekStart = DateTime.now();
   bool _isLoading = false;
@@ -30,10 +27,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   void initState() {
     super.initState();
     _selectedWeekStart = _getStartOfWeek(DateTime.now());
-
-    if (widget.enableGoogleCalendar) {
-      _loadEvents();
-    }
+    _loadEvents();
   }
 
   DateTime _getStartOfWeek(DateTime date) {
@@ -42,33 +36,22 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }
 
   Future<void> _loadEvents() async {
-    if (!widget.enableGoogleCalendar) return;
     setState(() => _isLoading = true);
-    try {
-      if (!_calendarService.isSignedIn) {
-        final silentlySignedIn = await _calendarService.signInSilently();
-        if (!silentlySignedIn) {
-          final signedIn = await _calendarService.signIn();
-          if (!signedIn) {
-            setState(() => _isLoading = false);
-            return;
-          }
-        }
-      }
-      final events = await _calendarService.getEventsForWeek(
-        _selectedWeekStart,
-      );
-      setState(() {
-        _events = events;
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('Error loading events: $e');
-      setState(() => _isLoading = false);
-    }
+    
+    final events = await CalendarService.fetchEvents(
+      token: widget.token,
+      month: _selectedWeekStart,
+    );
+
+    // FIX: Cek apakah widget masih terpasang sebelum memanggil setState
+    if (!mounted) return;
+
+    setState(() {
+      _events = events;
+      _isLoading = false;
+    });
   }
 
-  // 1. Ditingkatkan menjadi 14 hari (2 minggu) agar bisa di-scroll
   List<DateTime> _getWeekDates() {
     return List.generate(
       10,
@@ -80,18 +63,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     setState(() {
       _selectedWeekStart = _selectedWeekStart.subtract(const Duration(days: 7));
     });
-    if (widget.enableGoogleCalendar) {
-      _loadEvents();
-    }
+    _loadEvents();
   }
 
   void _nextWeek() {
     setState(() {
       _selectedWeekStart = _selectedWeekStart.add(const Duration(days: 7));
     });
-    if (widget.enableGoogleCalendar) {
-      _loadEvents();
-    }
+    _loadEvents();
   }
 
   @override
@@ -100,9 +79,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(
-        vertical: 16,
-      ), // Padding horizontal dihapus agar scroll mepet tepi
+      padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         color: AppColors.calendarBackground,
         borderRadius: BorderRadius.circular(12),
@@ -125,10 +102,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }
 
   Widget _buildHeader() {
-    final isConnected = widget.enableGoogleCalendar &&
-        _calendarService.isSignedIn &&
-        _calendarService.emailMatches(widget.registeredEmail);
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -138,14 +111,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         ),
         Row(
           children: [
-            if (isConnected) ...[
-              const Icon(
-                Icons.check_circle,
-                size: 16,
-                color: AppColors.primaryGreen,
-              ),
-              const SizedBox(width: 8),
-            ],
             IconButton(
               icon: const Icon(Icons.chevron_left, size: 20),
               onPressed: _previousWeek,
@@ -159,15 +124,13 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
-            if (widget.enableGoogleCalendar) ...[
-              const SizedBox(width: 12),
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 20),
-                onPressed: _loadEvents,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
+            const SizedBox(width: 12),
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 20),
+              onPressed: _loadEvents,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
           ],
         ),
       ],
@@ -183,16 +146,15 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  // 2. Menggunakan SingleChildScrollView agar bisa digeser (swipe)
   Widget _buildCalendarGrid(List<DateTime> weekDates) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 12), // Jarak awal scroll
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: weekDates.map((date) {
           return SizedBox(
-            width: 80, // Ukuran lebar kartu yang konsisten
+            width: 80,
             child: _buildDateCard(date),
           );
         }).toList(),
@@ -200,7 +162,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  // 3. Update Card (Menghapus Expanded & Memastikan Center)
   Widget _buildDateCard(DateTime date) {
     final dateKey = DateTime(date.year, date.month, date.day);
     final hasEvents =
@@ -301,10 +262,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 subtitle: event.description != null
                     ? Text(event.description!)
                     : null,
-                trailing: Text(
-                  DateFormat('HH:mm').format(event.date),
-                  style: const TextStyle(fontSize: 12),
-                ),
               );
             },
           ),

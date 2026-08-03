@@ -31,8 +31,7 @@ class HomePageKandang extends StatelessWidget {
                       CalendarWidget(
                         onDateSelected: (date) =>
                             print('Selected date: $date'),
-                        enableGoogleCalendar: true,
-                        registeredEmail: controller.userEmail.value,
+                        token: controller.token,
                       ),
                       _HomeActionButtons(controller: controller),
                       const SizedBox(height: 24),

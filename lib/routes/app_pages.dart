@@ -14,6 +14,8 @@ import 'package:haycrew_app/pages/dashboard/storage/tambahstokpage.dart';
 import 'package:haycrew_app/pages/dashboard/storage/laporanstokpage.dart';
 import 'package:haycrew_app/bindings/splash_binding.dart';
 import 'package:haycrew_app/pages/splashscreen_page.dart';
+import 'package:haycrew_app/pages/dashboard/kandang/riwayatkandang_page.dart';
+import 'package:haycrew_app/pages/dashboard/storage/riwayatstorage_page.dart';
 
 import '../pages/loginpage.dart';
 import '../bindings/login_binding.dart';
@@ -86,6 +88,14 @@ class AppPages {
       name: AppRoutes.LAPORAN_STOK,
       page: () => const LaporanStokPage(),
       binding: LaporanStokBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.RIWAYAT_STORAGE,
+      page: () => const RiwayatStoragePage()
+    ),
+    GetPage(
+      name: AppRoutes.RIWAYAT_KANDANG,
+      page: () => const RiwayatKandangPage(),
     ),
   ];
 }

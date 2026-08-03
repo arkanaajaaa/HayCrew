@@ -16,6 +16,8 @@ class AppRoutes {
   static const String LAPORAN_STOK       = '/laporan-stok';
   static const String DASHBOARD_RESELLER = '/dashboard-reseller';
   static const String RIWAYAT       = '/riwayat';
+  static const String RIWAYAT_KANDANG = '/riwayat-kandang';
+static const String RIWAYAT_STORAGE = '/riwayat-storage';
   static const String PROFIL        = '/profil';
   static const String SETTINGS      = '/settings';
   static const String NOTIFICATIONS = '/notifications';

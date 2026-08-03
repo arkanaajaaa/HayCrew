@@ -93,8 +93,17 @@ class ProfilController extends GetxController {
     ),
   ];
 
-  // ─── Actions ──────────────────────────────────────────────────────────────
-  void onTapRiwayatAktivitas() => _showComingSoon('Riwayat Aktivitas');
+// ─── Actions ──────────────────────────────────────────────────────────────
+  void onTapRiwayatAktivitas() {
+    final role = userRole.value.toLowerCase();
+    if (role.contains('kandang')) {
+      Get.toNamed(AppRoutes.RIWAYAT_KANDANG);
+    } else if (role.contains('gudang') || role.contains('storage')) {
+      Get.toNamed(AppRoutes.RIWAYAT_STORAGE);
+    } else {
+      _showComingSoon('Riwayat Aktivitas');
+    }
+  }
 
   // 2. Perbarui method onTapPusatBantuan ke link WhatsApp
   Future<void> onTapPusatBantuan() async {

@@ -11,6 +11,7 @@ import '../models/status_permintaan_model.dart';
 class HomeController extends GetxController {
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
+  String get token => _token;
 
   final RxList<StatusPermintaanModel> statusList =
       <StatusPermintaanModel>[].obs;
