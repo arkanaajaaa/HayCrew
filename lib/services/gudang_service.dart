@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:haycrew_app/constants/api_constant.dart';
 
@@ -21,7 +22,12 @@ class GudangService {
           )
           .timeout(const Duration(seconds: 10));
 
-      if (res.statusCode != 200) return fallback;
+      if (res.statusCode != 200) {
+        debugPrint(
+          'Gagal ambil daftar gudang (status ${res.statusCode}), fallback ke default: ${res.body}',
+        );
+        return fallback;
+      }
 
       final decoded = jsonDecode(res.body);
       final list = decoded is Map && decoded['data'] is List
@@ -33,8 +39,13 @@ class GudangService {
           .whereType<String>()
           .toList();
 
+      if (names.isEmpty) {
+        debugPrint('Daftar gudang dari API kosong, fallback ke default.');
+      }
+
       return names.isEmpty ? fallback : names;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Gagal ambil daftar gudang, fallback ke default: $e');
       return fallback;
     }
   }

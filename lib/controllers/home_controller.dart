@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,9 +10,15 @@ import 'package:haycrew_app/routes/app_routes.dart';
 import '../models/status_permintaan_model.dart';
 
 class HomeController extends GetxController {
+  // Polling biar status permintaan otomatis ke-refresh sendiri (mis. admin
+  // approve/reject dari web) tanpa perlu tarik-refresh manual tiap saat.
+  static const _pollInterval = Duration(seconds: 30);
+
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
   String get token => _token;
+
+  Timer? _pollTimer;
 
   final RxList<StatusPermintaanModel> statusList =
       <StatusPermintaanModel>[].obs;
@@ -27,6 +34,16 @@ class HomeController extends GetxController {
     super.onInit();
     _loadArgs();
     loadStatusPermintaan();
+    _pollTimer = Timer.periodic(
+      _pollInterval,
+      (_) => loadStatusPermintaan(showLoading: false),
+    );
+  }
+
+  @override
+  void onClose() {
+    _pollTimer?.cancel();
+    super.onClose();
   }
 
   void _loadArgs() {
@@ -38,9 +55,9 @@ class HomeController extends GetxController {
     userEmail.value = args['userEmail'] ?? '';
   }
 
-  Future<void> loadStatusPermintaan() async {
+  Future<void> loadStatusPermintaan({bool showLoading = true}) async {
   try {
-    isLoading.value = true;
+    if (showLoading) isLoading.value = true;
 
     final response = await http
         .get(

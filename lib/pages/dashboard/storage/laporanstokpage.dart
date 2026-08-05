@@ -47,7 +47,7 @@ class LaporanStokPage extends GetView<LaporanStokController> {
                 () => CDropdownField(
                   value: controller.selectedTempatDistribusi.value,
                   hintText: 'Pilih Tempat Pendistribusian',
-                  items: controller.gudangOptions,
+                  items: controller.gudangOptions.toList(),
                   onChanged: (newValue) {
                     if (newValue != null) {
                       controller.selectedTempatDistribusi.value = newValue;
@@ -114,11 +114,11 @@ class LaporanStokPage extends GetView<LaporanStokController> {
   Widget _buildStokDagingHeader(BuildContext context) {
     return Row(
       children: [
+        _headerChip('Jumlah'),
+        const SizedBox(width: 8),
         _headerChip('Jenis'),
         const SizedBox(width: 8),
         _headerChip('Bobot'),
-        const SizedBox(width: 8),
-        _headerChip('Jumlah'),
         const Spacer(),
         InkWell(
           borderRadius: BorderRadius.circular(24),
