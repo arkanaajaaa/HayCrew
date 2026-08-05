@@ -3,19 +3,18 @@ import 'package:http/http.dart' as http;
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/models/calender_event_model.dart';
 
-/// Ambil event kalender dari backend Laravel per bulan,
-/// menggantikan sumber Google Calendar.
+/// Ambil event kalender dari tabel `events` di database (lewat backend
+/// Laravel), menggantikan sumber Google Calendar. Backend sudah
+/// menyaring datanya sesuai role user yang login (lihat EventController::index),
+/// jadi di sini cukup ambil semua lalu dikelompokkan per tanggal.
 class CalendarService {
   static Future<Map<DateTime, List<CalendarEventModel>>> fetchEvents({
     required String token,
-    required DateTime month,
   }) async {
     try {
       final res = await http
           .get(
-            Uri.parse(
-              '${ApiConstant.baseUrl}/api/events?month=${month.month}&year=${month.year}',
-            ),
+            Uri.parse('${ApiConstant.baseUrl}/api/event'),
             headers: {
               'Accept': 'application/json',
               'Authorization': 'Bearer $token',

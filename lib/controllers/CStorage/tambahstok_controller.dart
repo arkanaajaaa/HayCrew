@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,10 +14,16 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
 class TambahStokController extends GetxController {
+  // Polling biar daftar gudang di dropdown otomatis ke-refresh sendiri kalau
+  // admin nambah gudang baru lewat web, tanpa perlu buka ulang halaman ini.
+  static const _pollInterval = Duration(seconds: 30);
+
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
 
   final _db = DBHelper();
+
+  Timer? _pollTimer;
 
   final stokMasukController = TextEditingController();
 
@@ -44,6 +51,7 @@ class TambahStokController extends GetxController {
     super.onInit();
     fetchTambahStok();
     _loadGudangOptions();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => _loadGudangOptions());
   }
 
   Future<void> _loadGudangOptions() async {
@@ -213,6 +221,7 @@ class TambahStokController extends GetxController {
 
   @override
   void onClose() {
+    _pollTimer?.cancel();
     stokMasukController.dispose();
     catatanController.dispose();
     super.onClose();

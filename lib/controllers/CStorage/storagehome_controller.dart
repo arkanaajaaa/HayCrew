@@ -1,5 +1,6 @@
 /// lib/controllers/CStorage/storage_home_controller.dart
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -62,9 +63,15 @@ class StokItemModel {
 }
 
 class StorageHomeController extends GetxController {
+  // Polling biar stok & ringkasan ayam otomatis ke-refresh sendiri (mis.
+  // stok diupdate dari web admin) tanpa perlu tarik-refresh manual tiap saat.
+  static const _pollInterval = Duration(seconds: 30);
+
   final _db = DBHelper();
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
+
+  Timer? _pollTimer;
 
   final userName = 'User'.obs;
   final userRole = 'Karyawan Storage'.obs;
@@ -88,6 +95,16 @@ class StorageHomeController extends GetxController {
     _loadArgs();
     loadStok();
     fetchStokAyamSummary();
+    _pollTimer = Timer.periodic(
+      _pollInterval,
+      (_) => refreshData(showLoading: false),
+    );
+  }
+
+  @override
+  void onClose() {
+    _pollTimer?.cancel();
+    super.onClose();
   }
 
   void _loadArgs() {
@@ -98,9 +115,9 @@ class StorageHomeController extends GetxController {
     userId.value = args['userId'] ?? '';
   }
 
-  Future<void> loadStok() async {
+  Future<void> loadStok({bool showLoading = true}) async {
   try {
-    isLoading.value = true;
+    if (showLoading) isLoading.value = true;
 
     final res = await http
         .get(
@@ -133,8 +150,8 @@ class StorageHomeController extends GetxController {
     stokList.value = localData.map((d) => StokItemModel.fromJson(d)).toList();
   }
 
-  Future<void> refreshData() async {
-    await loadStok();
+  Future<void> refreshData({bool showLoading = true}) async {
+    await loadStok(showLoading: showLoading);
     await fetchStokAyamSummary();
   }
 

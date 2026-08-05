@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_colors.dart';
@@ -19,15 +20,32 @@ class CalendarWidget extends StatefulWidget {
 }
 
 class _CalendarWidgetState extends State<CalendarWidget> {
+  // Interval polling biar event baru dari website (tambah/edit/hapus)
+  // otomatis kesinkron ke app tanpa perlu buka ulang halaman. Sama
+  // dengan REFRESH_INTERVAL_MS di admin-haycrew (Sidebar.jsx) supaya
+  // dua sisi punya "kesegaran" data yang selaras.
+  static const _pollInterval = Duration(seconds: 30);
+
   Map<DateTime, List<CalendarEventModel>> _events = {};
   DateTime _selectedWeekStart = DateTime.now();
   bool _isLoading = false;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _selectedWeekStart = _getStartOfWeek(DateTime.now());
     _loadEvents();
+    _pollTimer = Timer.periodic(
+      _pollInterval,
+      (_) => _loadEvents(showLoading: false),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   DateTime _getStartOfWeek(DateTime date) {
@@ -35,13 +53,10 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     return date.subtract(Duration(days: daysFromMonday));
   }
 
-  Future<void> _loadEvents() async {
-    setState(() => _isLoading = true);
-    
-    final events = await CalendarService.fetchEvents(
-      token: widget.token,
-      month: _selectedWeekStart,
-    );
+  Future<void> _loadEvents({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
+
+    final events = await CalendarService.fetchEvents(token: widget.token);
 
     // FIX: Cek apakah widget masih terpasang sebelum memanggil setState
     if (!mounted) return;

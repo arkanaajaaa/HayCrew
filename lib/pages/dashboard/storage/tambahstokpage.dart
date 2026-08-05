@@ -60,7 +60,7 @@ class TambahStokPage extends GetView<TambahStokController> {
                 () => CDropdownField(
                   value: controller.selectedTempatDistribusi.value,
                   hintText: 'Pilih Tempat Pendistribusian',
-                  items: controller.gudangOptions,
+                  items: controller.gudangOptions.toList(),
                   onChanged: (newValue) {
                     if (newValue != null) {
                       controller.selectedTempatDistribusi.value = newValue;

@@ -20,7 +20,7 @@ class DBHelper {
 
     return await openDatabase(
       path,
-      version: 8, // naik dari 7 — skema tabel stok disesuaikan sama kolom tabel `stoks` di backend
+      version: 9, // naik dari 8 — device yang sempat pakai skema stok versi 8 sebelum kolom tanggal_update ditambahkan nggak ke-upgrade otomatis, jadi versi dinaikkan lagi buat maksa migrasi ulang
       onCreate: (db, version) async {
         await _createLaporanKandangTable(db);
         await _createTambahStokTable(db);
@@ -53,6 +53,9 @@ class DBHelper {
           await _migrateLaporanGudangStokAwalMasuk(db);
         }
         if (oldVersion < 8) {
+          await _migrateStokTable(db);
+        }
+        if (oldVersion < 9) {
           await _migrateStokTable(db);
         }
       },

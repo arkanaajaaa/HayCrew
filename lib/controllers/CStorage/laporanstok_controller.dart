@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -39,10 +40,16 @@ class StokDagingItem {
 }
 
 class LaporanStokController extends GetxController {
+  // Polling biar daftar gudang di dropdown otomatis ke-refresh sendiri kalau
+  // admin nambah gudang baru lewat web, tanpa perlu buka ulang halaman ini.
+  static const _pollInterval = Duration(seconds: 30);
+
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
 
   final _db = DBHelper();
+
+  Timer? _pollTimer;
 
   // Radio button state untuk jenis daging ("Whole" atau "Parting")
   final selectedJenis = 'Whole'.obs;
@@ -80,6 +87,7 @@ class LaporanStokController extends GetxController {
     super.onInit();
     fetchLaporanGudang();
     _loadGudangOptions();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => _loadGudangOptions());
   }
 
   Future<void> _loadGudangOptions() async {
@@ -321,6 +329,7 @@ class LaporanStokController extends GetxController {
 
   @override
   void onClose() {
+    _pollTimer?.cancel();
     bobotController.dispose();
     jumlahController.dispose();
     catatanController.dispose();
