@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/navbar_controller.dart';
 import 'package:haycrew_app/pages/dashboard/storage/homepagestorage.dart';
+import 'package:haycrew_app/pages/dashboard/storage/riwayatstorage_page.dart';
 import 'package:haycrew_app/pages/profilepage.dart';
 
 class MainShellPageStorage extends StatelessWidget {
@@ -15,6 +16,7 @@ class MainShellPageStorage extends StatelessWidget {
 
     final List<Widget> pages = [
       const HomePageStorage(),
+      const RiwayatStoragePage(),
       const ProfilPage(),
     ];
 
@@ -52,11 +54,18 @@ class MainShellPageStorage extends StatelessWidget {
                 onTap: () => navController.changeTab(0),
               ),
               _buildNavItem(
-                icon: Icons.person,
-                label: 'Profil',
+                icon: Icons.history,
+                label: 'Riwayat',
                 index: 1,
                 currentIndex: navController.currentNavIndex.value,
                 onTap: () => navController.changeTab(1),
+              ),
+              _buildNavItem(
+                icon: Icons.person,
+                label: 'Profil',
+                index: 2,
+                currentIndex: navController.currentNavIndex.value,
+                onTap: () => navController.changeTab(2),
               ),
             ],
           ),

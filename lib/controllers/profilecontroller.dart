@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart'; // 1. Tambahkan import ini
+import 'package:url_launcher/url_launcher.dart'; 
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
@@ -69,13 +69,6 @@ class ProfilController extends GetxController {
 
   // ─── Menu ─────────────────────────────────────────────────────────────────
   List<ProfilMenuItem> _buildMenuItems() => [
-    ProfilMenuItem(
-      icon: Icons.history,
-      iconBgColor: AppColors.calendarBackground,
-      iconColor: AppColors.orange,
-      title: 'Riwayat Aktivitas',
-      onTap: onTapRiwayatAktivitas,
-    ),
     ProfilMenuItem(
       icon: Icons.help_outline,
       iconBgColor: AppColors.calendarBackground,

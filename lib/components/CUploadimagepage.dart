@@ -2,17 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// CUploadImageBox — Kotak upload gambar dengan border putus-putus (dashed),
-/// preview foto, dan placeholder icon + text. Dipakai di TambahStokPage &
-/// LaporanStokPage (dan bisa dipakai ulang di halaman lain yang butuh upload foto).
-///
-/// Penggunaan:
-/// ```dart
-/// Obx(() => CUploadImageBox(
-///   image: controller.image.value,
-///   onTap: controller.pickImage,
-/// ))
-/// ```
 class CUploadImageBox extends StatelessWidget {
   final File? image;
   final VoidCallback onTap;
@@ -84,8 +73,6 @@ class CUploadImageBox extends StatelessWidget {
   }
 }
 
-/// Painter border putus-putus (dashed) rounded-rect, tanpa perlu tambah
-/// package baru ke pubspec.yaml.
 class _DashedBorderPainter extends CustomPainter {
   final Color color;
   final double radius;

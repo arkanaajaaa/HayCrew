@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/navbar_controller.dart';
 import 'package:haycrew_app/pages/dashboard/kandang/homepagekandang.dart';
+import 'package:haycrew_app/pages/dashboard/kandang/riwayatkandang_page.dart';
 import 'package:haycrew_app/pages/profilepage.dart';
 
 class MainShellPage extends StatelessWidget {
@@ -13,15 +14,15 @@ class MainShellPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final NavbarController navController = Get.find<NavbarController>();
 
-    // Tiga halaman yang di-swap di body
+    // Empat halaman yang di-swap di body
     final List<Widget> pages = [
       const HomePageKandang(),
+      const RiwayatKandangPage(),
       const ProfilPage(),
     ];
 
     return Obx(() {
       return Scaffold(
-        // Body langsung swap berdasarkan index — tidak ada navigasi route
         body: pages[navController.currentNavIndex.value],
         bottomNavigationBar: _buildBottomNav(navController),
       );
@@ -54,11 +55,18 @@ class MainShellPage extends StatelessWidget {
                 onTap: () => navController.changeTab(0),
               ),
               _buildNavItem(
-                icon: Icons.person,
-                label: 'Profil',
+                icon: Icons.history,
+                label: 'Riwayat',
                 index: 1,
                 currentIndex: navController.currentNavIndex.value,
                 onTap: () => navController.changeTab(1),
+              ),
+              _buildNavItem(
+                icon: Icons.person,
+                label: 'Profil',
+                index: 2,
+                currentIndex: navController.currentNavIndex.value,
+                onTap: () => navController.changeTab(2),
               ),
             ],
           ),
