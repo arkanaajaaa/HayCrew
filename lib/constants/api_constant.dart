@@ -1,3 +1,3 @@
 class ApiConstant {
-  static const String baseUrl = 'http://103.253.212.178';
+  static const String baseUrl = 'https://api.haycrew.id';
 }

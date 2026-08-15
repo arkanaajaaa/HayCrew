@@ -12,7 +12,7 @@ import 'package:haycrew_app/components/CSuccessSplash.dart';
 enum JenisPermintaan { barang, dana }
 
 class PermintaanController extends GetxController {
-  static const String baseUrl = 'http://103.253.212.178';
+  static const String baseUrl = 'https://api.haycrew.id';
 
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';

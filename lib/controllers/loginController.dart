@@ -8,7 +8,7 @@ import '../routes/app_routes.dart';
 import '../utils/name_utils.dart';
 
 class LoginController extends GetxController {
-  static const String baseUrl = 'http://103.253.212.178';
+  static const String baseUrl = 'https://api.haycrew.id';
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();

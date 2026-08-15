@@ -14,7 +14,7 @@ import 'package:haycrew_app/components/CSuccessSplash.dart';
 class LaporanController extends GetxController {
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
-  static const String baseUrl = 'http://103.253.212.178';
+  static const String baseUrl = 'https://api.haycrew.id';
 
   final _db = DBHelper();
 
