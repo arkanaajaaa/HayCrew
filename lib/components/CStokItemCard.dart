@@ -72,9 +72,9 @@ class CStokItemCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: AppColors.lightGreen.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.25)),
+          border: Border.all(color: AppColors.lightGreen.withOpacity(0.25)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),

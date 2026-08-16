@@ -20,11 +20,12 @@ class StatusCardWidget extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: _getStatusColor(status.status),
+          color: AppColors.lightGreen.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.lightGreen.withOpacity(0.25)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -57,7 +58,7 @@ class StatusCardWidget extends StatelessWidget {
         Text(
           status.day.toString(),
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.textDark,
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1,
@@ -66,8 +67,8 @@ class StatusCardWidget extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           status.month,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppColors.textDark.withOpacity(0.7),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -84,7 +85,7 @@ class StatusCardWidget extends StatelessWidget {
         Text(
           status.title,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.textDark,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -95,7 +96,7 @@ class StatusCardWidget extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             status.subtitle!,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -106,18 +107,19 @@ class StatusCardWidget extends StatelessWidget {
 
   /// Build status badge
   Widget _buildStatusBadge() {
+    final color = _getStatusColor(status.status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         _getStatusLabel(status.status),
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: color,
           fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
