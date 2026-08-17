@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
+import 'package:haycrew_app/utils/error_utils.dart';
 
 /// Satu baris entri stok daging: Jenis (Whole/Parting/dst), Bobot per unit
 /// (kg), dan Jumlah unit. Contoh tampilan: "3   Whole   0,7 kg".
@@ -40,9 +41,6 @@ class StokDagingItem {
 }
 
 class LaporanStokController extends GetxController {
-  // Polling biar daftar gudang di dropdown otomatis ke-refresh sendiri kalau
-  // admin nambah gudang baru lewat web, tanpa perlu buka ulang halaman ini.
-  static const _pollInterval = Duration(seconds: 30);
 
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
@@ -87,7 +85,7 @@ class LaporanStokController extends GetxController {
     super.onInit();
     fetchLaporanGudang();
     _loadGudangOptions();
-    _pollTimer = Timer.periodic(_pollInterval, (_) => _loadGudangOptions());
+    _pollTimer = Timer.periodic(ApiConstant.pollInterval, (_) => _loadGudangOptions());
   }
 
   Future<void> _loadGudangOptions() async {
@@ -246,7 +244,7 @@ class LaporanStokController extends GetxController {
         Get.back();
       }
     } catch (e) {
-      Get.snackbar('Error', 'Terjadi kesalahan: $e');
+      Get.snackbar('Error', friendlyErrorMessage(e));
     } finally {
       isLoading.value = false;
     }
@@ -279,14 +277,17 @@ class LaporanStokController extends GetxController {
         request.fields['catatan'] = data['catatan'];
       }
 
-      // Backend mengharapkan 'items' sebagai array (items[i][jenis] dst),
-      // bukan JSON string tunggal — makanya diambil langsung dari
-      // stokDagingList, bukan dari data['detail_stok'].
-      for (var i = 0; i < stokDagingList.length; i++) {
-        final item = stokDagingList[i];
-        request.fields['items[$i][jenis]'] = item.jenis;
-        request.fields['items[$i][bobot]'] = item.bobot.toString();
-        request.fields['items[$i][jumlah]'] = item.jumlah.toString();
+      // Backend mengharapkan 'items' sebagai array (items[i][jenis] dst).
+      // Diparse dari 'detail_stok' (JSON string tersimpan di data), bukan
+      // dari stokDagingList langsung — biar retry-sync laporan lama tetap
+      // ngirim item yang bener meskipun stokDagingList di form udah
+      // direset/diisi draft baru.
+      final rawItems = jsonDecode(data['detail_stok'] as String) as List;
+      for (var i = 0; i < rawItems.length; i++) {
+        final item = rawItems[i] as Map<String, dynamic>;
+        request.fields['items[$i][jenis]'] = item['jenis'].toString();
+        request.fields['items[$i][bobot]'] = item['bobot'].toString();
+        request.fields['items[$i][jumlah]'] = item['jumlah'].toString();
       }
 
       if (data['foto'] != null && data['foto'].toString().isNotEmpty) {
@@ -321,10 +322,36 @@ class LaporanStokController extends GetxController {
     laporanGudangList.assignAll(data);
   }
 
+  /// Laporan yang tersimpan lokal tapi belum berhasil dikirim ke server.
+  List<Map<String, dynamic>> get pendingLaporanGudang =>
+      laporanGudangList.where((l) => l['is_synced'] == 0).toList();
+
   Future<void> deleteLaporanGudang(int id) async {
     await _db.deleteLaporanGudang(id);
     fetchLaporanGudang();
     Get.snackbar('Berhasil', 'Laporan dihapus.');
+  }
+
+  final isSyncing = <int>{}.obs;
+
+  Future<bool> retrySync(Map<String, dynamic> item) async {
+    final id = item['id'] as int;
+    isSyncing.add(id);
+    try {
+      final success = await _submitToApi(item);
+      if (success) {
+        await _db.markLaporanGudangSynced(id);
+        await fetchLaporanGudang();
+        _refreshHomeIfExists();
+        Get.snackbar('Berhasil', 'Laporan berhasil disinkron.');
+      } else {
+        Get.snackbar('Gagal', 'Masih belum bisa terkirim. Coba lagi nanti.',
+            backgroundColor: Colors.orange.shade100);
+      }
+      return success;
+    } finally {
+      isSyncing.remove(id);
+    }
   }
 
   @override

@@ -8,52 +8,105 @@ import 'package:haycrew_app/controllers/home_controller.dart';
 import 'package:haycrew_app/models/status_permintaan_model.dart';
 
 /// Riwayat Kandang — menampilkan seluruh data Status Permintaan.
-/// Reuse 100% dari [HomeController.statusList] 
-class RiwayatKandangPage extends GetView<HomeController> {
+/// Reuse 100% dari [HomeController.statusList]
+class RiwayatKandangPage extends StatefulWidget {
   const RiwayatKandangPage({Key? key}) : super(key: key);
+
+  @override
+  State<RiwayatKandangPage> createState() => _RiwayatKandangPageState();
+}
+
+class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
+  final HomeController controller = Get.find<HomeController>();
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<StatusPermintaanModel> _filtered(List<StatusPermintaanModel> source) {
+    if (_query.trim().isEmpty) return source;
+    final q = _query.trim().toLowerCase();
+    return source
+        .where((s) =>
+            s.title.toLowerCase().contains(q) ||
+            (s.description ?? '').toLowerCase().contains(q))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: const CAppBar(title: 'Riwayat Kegiatan'),
-      body: RefreshIndicator(
-        color: AppColors.primaryGreen,
-        onRefresh: controller.refreshData,
-        child: Obx(() {
-          if (controller.isLoading.value && controller.statusList.isEmpty) {
-            return ListView(
-              children: const [
-                SizedBox(height: 120),
-                CLoadingOrEmpty.loading(),
-              ],
-            );
-          }
-
-          if (controller.statusList.isEmpty) {
-            return ListView(
-              children: const [
-                SizedBox(height: 80),
-                CLoadingOrEmpty.empty(
-                  message: 'Belum ada riwayat permintaan',
-                  icon: Icons.history,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (val) => setState(() => _query = val),
+              decoration: InputDecoration(
+                hintText: 'Cari permintaan...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                isDense: true,
+                filled: true,
+                fillColor: AppColors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
                 ),
-              ],
-            );
-          }
+              ),
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.primaryGreen,
+              onRefresh: controller.refreshData,
+              child: Obx(() {
+                if (controller.isLoading.value && controller.statusList.isEmpty) {
+                  return ListView(
+                    children: const [
+                      SizedBox(height: 120),
+                      CLoadingOrEmpty.loading(),
+                    ],
+                  );
+                }
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: controller.statusList.length,
-            itemBuilder: (context, index) {
-              final status = controller.statusList[index];
-              return _RiwayatKandangCard(
-                status: status,
-                onTap: () => controller.navigateToDetail(status),
-              );
-            },
-          );
-        }),
+                final items = _filtered(controller.statusList);
+
+                if (items.isEmpty) {
+                  return ListView(
+                    children: [
+                      const SizedBox(height: 80),
+                      CLoadingOrEmpty.empty(
+                        message: _query.trim().isEmpty
+                            ? 'Belum ada riwayat permintaan'
+                            : 'Gak ada hasil buat "$_query"',
+                        icon: Icons.history,
+                      ),
+                    ],
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final status = items[index];
+                    return _RiwayatKandangCard(
+                      status: status,
+                      onTap: () => controller.navigateToDetail(status),
+                    );
+                  },
+                );
+              }),
+            ),
+          ),
+        ],
       ),
     );
   }

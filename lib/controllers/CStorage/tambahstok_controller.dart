@@ -12,12 +12,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
+import 'package:haycrew_app/utils/error_utils.dart';
 
 class TambahStokController extends GetxController {
-  // Polling biar daftar gudang di dropdown otomatis ke-refresh sendiri kalau
-  // admin nambah gudang baru lewat web, tanpa perlu buka ulang halaman ini.
-  static const _pollInterval = Duration(seconds: 30);
-
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
 
@@ -51,7 +48,7 @@ class TambahStokController extends GetxController {
     super.onInit();
     fetchTambahStok();
     _loadGudangOptions();
-    _pollTimer = Timer.periodic(_pollInterval, (_) => _loadGudangOptions());
+    _pollTimer = Timer.periodic(ApiConstant.pollInterval, (_) => _loadGudangOptions());
   }
 
   Future<void> _loadGudangOptions() async {
@@ -148,7 +145,7 @@ class TambahStokController extends GetxController {
         Get.back();
       }
     } catch (e) {
-      Get.snackbar('Error', 'Terjadi kesalahan: $e');
+      Get.snackbar('Error', friendlyErrorMessage(e));
     } finally {
       isLoading.value = false;
     }
@@ -213,10 +210,36 @@ class TambahStokController extends GetxController {
     tambahStokList.assignAll(data);
   }
 
+  /// Data yang tersimpan lokal tapi belum berhasil dikirim ke server.
+  List<Map<String, dynamic>> get pendingTambahStok =>
+      tambahStokList.where((l) => l['is_synced'] == 0).toList();
+
   Future<void> deleteTambahStok(int id) async {
     await _db.deleteTambahStok(id);
     fetchTambahStok();
     Get.snackbar('Berhasil', 'Data dihapus.');
+  }
+
+  final isSyncing = <int>{}.obs;
+
+  Future<bool> retrySync(Map<String, dynamic> item) async {
+    final id = item['id'] as int;
+    isSyncing.add(id);
+    try {
+      final success = await _submitToApi(item);
+      if (success) {
+        await _db.markTambahStokSynced(id);
+        await fetchTambahStok();
+        _refreshHomeIfExists();
+        Get.snackbar('Berhasil', 'Data berhasil disinkron.');
+      } else {
+        Get.snackbar('Gagal', 'Masih belum bisa terkirim. Coba lagi nanti.',
+            backgroundColor: Colors.orange.shade100);
+      }
+      return success;
+    } finally {
+      isSyncing.remove(id);
+    }
   }
 
   @override

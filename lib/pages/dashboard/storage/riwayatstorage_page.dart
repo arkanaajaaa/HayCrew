@@ -8,51 +8,104 @@ import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
 
 /// Riwayat Storage — menampilkan seluruh data Daftar Stok.
 /// Reuse 100% dari [StorageHomeController.stokList] (endpoint `/api/stok`),
-class RiwayatStoragePage extends GetView<StorageHomeController> {
+class RiwayatStoragePage extends StatefulWidget {
   const RiwayatStoragePage({Key? key}) : super(key: key);
+
+  @override
+  State<RiwayatStoragePage> createState() => _RiwayatStoragePageState();
+}
+
+class _RiwayatStoragePageState extends State<RiwayatStoragePage> {
+  final StorageHomeController controller = Get.find<StorageHomeController>();
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<StokItemModel> _filtered(List<StokItemModel> source) {
+    if (_query.trim().isEmpty) return source;
+    final q = _query.trim().toLowerCase();
+    return source
+        .where((s) =>
+            s.jenis.toLowerCase().contains(q) ||
+            (s.picName ?? '').toLowerCase().contains(q))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: const CAppBar(title: 'Riwayat Kegiatan'),
-      body: RefreshIndicator(
-        color: AppColors.primaryGreen,
-        onRefresh: controller.refreshData,
-        child: Obx(() {
-          if (controller.isLoading.value && controller.stokList.isEmpty) {
-            return ListView(
-              children: const [
-                SizedBox(height: 120),
-                CLoadingOrEmpty.loading(),
-              ],
-            );
-          }
-
-          if (controller.stokList.isEmpty) {
-            return ListView(
-              children: const [
-                SizedBox(height: 80),
-                CLoadingOrEmpty.empty(
-                  message: 'Belum ada riwayat stok',
-                  icon: Icons.history,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (val) => setState(() => _query = val),
+              decoration: InputDecoration(
+                hintText: 'Cari jenis stok atau PIC...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                isDense: true,
+                filled: true,
+                fillColor: AppColors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
                 ),
-              ],
-            );
-          }
+              ),
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.primaryGreen,
+              onRefresh: controller.refreshData,
+              child: Obx(() {
+                if (controller.isLoading.value && controller.stokList.isEmpty) {
+                  return ListView(
+                    children: const [
+                      SizedBox(height: 120),
+                      CLoadingOrEmpty.loading(),
+                    ],
+                  );
+                }
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: controller.stokList.length,
-            itemBuilder: (context, index) {
-              final item = controller.stokList[index];
-              return _RiwayatStorageCard(
-                item: item,
-                onTap: () => controller.navigateToDetail(item),
-              );
-            },
-          );
-        }),
+                final items = _filtered(controller.stokList);
+
+                if (items.isEmpty) {
+                  return ListView(
+                    children: [
+                      const SizedBox(height: 80),
+                      CLoadingOrEmpty.empty(
+                        message: _query.trim().isEmpty
+                            ? 'Belum ada riwayat stok'
+                            : 'Gak ada hasil buat "$_query"',
+                        icon: Icons.history,
+                      ),
+                    ],
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return _RiwayatStorageCard(
+                      item: item,
+                      onTap: () => controller.navigateToDetail(item),
+                    );
+                  },
+                );
+              }),
+            ),
+          ),
+        ],
       ),
     );
   }

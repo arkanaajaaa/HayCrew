@@ -63,10 +63,6 @@ class StokItemModel {
 }
 
 class StorageHomeController extends GetxController {
-  // Polling biar stok & ringkasan ayam otomatis ke-refresh sendiri (mis.
-  // stok diupdate dari web admin) tanpa perlu tarik-refresh manual tiap saat.
-  static const _pollInterval = Duration(seconds: 30);
-
   final _db = DBHelper();
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
@@ -79,6 +75,9 @@ class StorageHomeController extends GetxController {
 
   final RxList<StokItemModel> stokList = <StokItemModel>[].obs;
   final isLoading = false.obs;
+  // true kalau fetch gagal DAN cache lokal juga kosong — beda dari
+  // "genuinely gak ada stok", biar gak nyamar jadi empty state biasa.
+  final hasLoadError = false.obs;
 
   final stokAyamGudang = 0.obs; 
   final stokKeluar = 0.obs; 
@@ -96,7 +95,7 @@ class StorageHomeController extends GetxController {
     loadStok();
     fetchStokAyamSummary();
     _pollTimer = Timer.periodic(
-      _pollInterval,
+      ApiConstant.pollInterval,
       (_) => refreshData(showLoading: false),
     );
   }
@@ -118,6 +117,7 @@ class StorageHomeController extends GetxController {
   Future<void> loadStok({bool showLoading = true}) async {
   try {
     if (showLoading) isLoading.value = true;
+    hasLoadError.value = false;
 
     final res = await http
         .get(
@@ -136,14 +136,16 @@ class StorageHomeController extends GetxController {
       await _db.replaceAllStok(list);
     } else {
       await _loadStokFromLocal();
+      if (stokList.isEmpty) hasLoadError.value = true;
     }
   } catch (e) {
     debugPrint('Gagal ambil stok dari API, fallback lokal: $e');
     await _loadStokFromLocal();
+    if (stokList.isEmpty) hasLoadError.value = true;
   } finally {
     isLoading.value = false;
     }
-  } 
+  }
 
   Future<void> _loadStokFromLocal() async {
     final localData = await _db.getAllStok();
@@ -298,7 +300,7 @@ class StorageHomeController extends GetxController {
             Text('Status : ${_statusLabel(item.status)}'),
           ],
         ),
-        actions: [TextButton(onPressed: Get.back, child: const Text('OK'))],
+        actions: [TextButton(onPressed: Get.back, child: const Text('Tutup'))],
       ),
     );
   }

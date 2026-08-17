@@ -10,12 +10,14 @@ class CLoadingOrEmpty extends StatelessWidget {
   final String? message;
   final IconData? icon;
   final String? errorDetail;
+  final VoidCallback? onRetry;
 
   const CLoadingOrEmpty.loading({Key? key})
       : _type = _Type.loading,
         message = null,
         icon = null,
         errorDetail = null,
+        onRetry = null,
         super(key: key);
 
   const CLoadingOrEmpty.empty({
@@ -24,12 +26,14 @@ class CLoadingOrEmpty extends StatelessWidget {
     this.icon = Icons.inbox_outlined,
   })  : _type = _Type.empty,
         errorDetail = null,
+        onRetry = null,
         super(key: key);
 
   const CLoadingOrEmpty.error({
     Key? key,
     this.message = 'Terjadi kesalahan',
     this.errorDetail,
+    this.onRetry,
   })  : _type = _Type.error,
         icon = Icons.error_outline,
         super(key: key);
@@ -80,6 +84,17 @@ class CLoadingOrEmpty extends StatelessWidget {
                 errorDetail!,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey[500], fontSize: 13),
+              ),
+            ],
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: onRetry,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Coba Lagi'),
               ),
             ],
           ],

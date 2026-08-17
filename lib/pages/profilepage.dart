@@ -119,6 +119,22 @@ class _AvatarWidget extends GetView<ProfilController> {
           return Image.network(
             url,
             fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return Container(
+                color: AppColors.calendarBackground,
+                child: const Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ),
+              );
+            },
             errorBuilder: (_, __, ___) => Container(
               color: AppColors.calendarBackground,
               child: const Icon(Icons.person, color: AppColors.primaryGreen, size: 56),

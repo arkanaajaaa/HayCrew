@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import '../constants/api_constant.dart';
 import '../routes/app_routes.dart';
+import '../utils/error_utils.dart';
 import '../utils/name_utils.dart';
 
 class LoginController extends GetxController {
-  static const String baseUrl = 'https://api.haycrew.id';
+  static const String baseUrl = ApiConstant.baseUrl;
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -107,7 +109,7 @@ class LoginController extends GetxController {
     _showError('Koneksi timeout. Pastikan server menyala dan IP benar.');
   } catch (e) {
     debugPrint('Exception: $e');
-    _showError('Login gagal: ${e.toString()}');
+    _showError(friendlyErrorMessage(e));
   } finally {
     isLoading.value = false;
   }

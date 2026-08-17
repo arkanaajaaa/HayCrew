@@ -63,12 +63,12 @@ class AppPages {
     
     GetPage(
       name: AppRoutes.LAPOR_KANDANG,
-      page: () => const LaporanPage(),
+      page: () => LaporanPage(),
       binding: LaporanBinding(),
     ),
     GetPage(
       name: AppRoutes.KIRIM_PERMINTAAN,
-      page: () => const PermintaanKandangPage(),
+      page: () => PermintaanKandangPage(),
       binding: PermintaanBinding(),
     ),
 
@@ -81,7 +81,7 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.TAMBAH_STOK,
-      page: () => const TambahStokPage(),
+      page: () => TambahStokPage(),
       binding: TambahStokBinding(),
     ),
     GetPage(
@@ -165,7 +165,7 @@ class AppPages {
 //     ),
 //     GetPage(
 //       name: AppRoutes.KIRIM_PERMINTAAN,
-//       page: () => const PermintaanKandangPage(),
+//       page: () => PermintaanKandangPage(),
 //       binding: PermintaanBinding(),
 //     ),
 

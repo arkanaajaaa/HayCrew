@@ -135,8 +135,8 @@ class _StorageHeader extends StatelessWidget {
                 size: 24,
               ),
               onPressed: controller.navigateToNotifications,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: 'Notifikasi',
             ),
           ),
         ],
@@ -290,7 +290,16 @@ class _StorageStokList extends StatelessWidget {
         return const CLoadingOrEmpty.loading();
       }
 
-      // State 2: kosong
+      // State 2: gagal fetch dan cache lokal juga kosong
+      if (controller.hasLoadError.value) {
+        return CLoadingOrEmpty.error(
+          message: 'Gagal memuat data stok',
+          errorDetail: 'Cek koneksi internet kamu lalu coba lagi.',
+          onRetry: () => controller.loadStok(),
+        );
+      }
+
+      // State 3: kosong (genuinely gak ada stok)
       if (controller.stokList.isEmpty) {
         return const CLoadingOrEmpty.empty(
           message: 'Tidak ada data stok',
@@ -298,9 +307,13 @@ class _StorageStokList extends StatelessWidget {
         );
       }
 
-      // State 3: ada data
+      // State 4: ada data — dibatasin sama kayak _HomeStatusList di dashboard
+      // kandang, biar preview di homepage gak me-render ratusan card
+      // sekaligus. Daftar lengkap tetap bisa dilihat lewat halaman Riwayat.
+      const int maxVisible = 8;
+      final visibleStokList = controller.stokList.take(maxVisible).toList();
       return Column(
-        children: controller.stokList.map((item) {
+        children: visibleStokList.map((item) {
           return CStokItemCard(
             item: item,
             onTap: () => controller.navigateToDetail(item),

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,18 +6,14 @@ import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/models/permintaan_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:haycrew_app/routes/app_routes.dart';
+import 'package:haycrew_app/utils/error_utils.dart';
+import 'package:intl/intl.dart';
 import '../models/status_permintaan_model.dart';
 
 class HomeController extends GetxController {
-  // Polling biar status permintaan otomatis ke-refresh sendiri (mis. admin
-  // approve/reject dari web) tanpa perlu tarik-refresh manual tiap saat.
-  static const _pollInterval = Duration(seconds: 30);
-
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
   String get token => _token;
-
-  Timer? _pollTimer;
 
   final RxList<StatusPermintaanModel> statusList =
       <StatusPermintaanModel>[].obs;
@@ -34,16 +29,8 @@ class HomeController extends GetxController {
     super.onInit();
     _loadArgs();
     loadStatusPermintaan();
-    _pollTimer = Timer.periodic(
-      _pollInterval,
-      (_) => loadStatusPermintaan(showLoading: false),
-    );
-  }
-
-  @override
-  void onClose() {
-    _pollTimer?.cancel();
-    super.onClose();
+    // Polling-nya dijalankan satu timer bersama di HomePageKandang (biar
+    // nyatu sama refresh CalendarWidget), bukan timer sendiri di sini.
   }
 
   void _loadArgs() {
@@ -86,7 +73,7 @@ class HomeController extends GetxController {
               'title': item.namaPermintaan,
               'status': _mapStatus(item.status),
               'description': item.tipe == 'dana'
-                  ? 'Dana: Rp ${item.harga ?? 0}'
+                  ? 'Dana: Rp ${NumberFormat.decimalPattern('id_ID').format(num.tryParse(item.harga ?? '') ?? 0)}'
                   : 'Barang: ${item.jumlah ?? 0} pcs',
               'alasan_tolak': item.alasanTolak,
             }),
@@ -100,7 +87,7 @@ class HomeController extends GetxController {
       Get.snackbar('Error', 'Gagal memuat data permintaan.');
     }
     } catch (e) {
-      Get.snackbar('Error', 'Gagal memuat data: $e');
+      Get.snackbar('Error', friendlyErrorMessage(e));
     } finally {
       isLoading.value = false;
     }
@@ -109,9 +96,9 @@ class HomeController extends GetxController {
   int _statusPriority(dynamic status) {
     final s = status.toString().split('.').last; // handle kalau status itu enum
     switch (s) {
-      case 'accepted':
-        return 0;
       case 'pending':
+        return 0;
+      case 'accepted':
         return 1;
       case 'rejected':
         return 2;
@@ -189,7 +176,7 @@ class HomeController extends GetxController {
             ],
           ],
         ),
-        actions: [TextButton(onPressed: Get.back, child: const Text('OK'))],
+        actions: [TextButton(onPressed: Get.back, child: const Text('Tutup'))],
       ),
     );
   }

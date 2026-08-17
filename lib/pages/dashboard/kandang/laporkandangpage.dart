@@ -4,11 +4,14 @@ import 'package:haycrew_app/controllers/CKandang/laporancontroller.dart';
 import 'package:haycrew_app/components/CTextfield.dart';
 import 'package:haycrew_app/components/CButton.dart';
 import 'package:haycrew_app/components/CAppBar.dart';
+import 'package:haycrew_app/components/CPendingSyncSection.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
 import '../../../constants/app_colors.dart';
 
 class LaporanPage extends GetView<LaporanController> {
-  const LaporanPage({Key? key}) : super(key: key);
+  LaporanPage({Key? key}) : super(key: key);
+
+  final _formKey = GlobalKey<FormState>();
 
   Future<void> _handleTandaiPanen(BuildContext context) async {
     final confirm = await Get.dialog<bool>(
@@ -99,6 +102,35 @@ class LaporanPage extends GetView<LaporanController> {
           return const Center(child: CircularProgressIndicator());
         }
 
+        if (controller.checkSiklusError.value) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.wifi_off, size: 48, color: Colors.red),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Gagal memuat status siklus. Cek koneksi internet kamu.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 20),
+                  CButton(
+                    text: 'Coba Lagi',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    borderRadius: 8,
+                    color: AppColors.primaryGreen,
+                    onPressed: controller.checkSiklusAktif,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         if (controller.siklusAktifId.value == null) {
           return Center(
             child: Padding(
@@ -140,9 +172,27 @@ class LaporanPage extends GetView<LaporanController> {
         return SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(18),
-            child: Column(
+            child: Form(
+              key: _formKey,
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
+                CPendingSyncSection(
+                  items: controller.pendingLaporan.map((item) {
+                    return CPendingSyncItem(
+                      id: item['id'] as int,
+                      title: 'Laporan ${item['tanggal'] ?? ''}',
+                      subtitle:
+                          'Ayam mati: ${item['jumlah_ayam_mati'] ?? '-'} • Bobot: ${item['rata_rata_bobot'] ?? '-'} kg',
+                    );
+                  }).toList(),
+                  isSyncing: (id) => controller.isSyncing.contains(id),
+                  onRetry: (id) => controller.retrySync(
+                    controller.pendingLaporan.firstWhere((l) => l['id'] == id),
+                  ),
+                  onDelete: (id) => controller.deleteLaporan(id),
+                ),
 
                 // Banner info umur siklus
                 Container(
@@ -255,6 +305,11 @@ class LaporanPage extends GetView<LaporanController> {
                             controller: controller.jumlahAyamAwalController,
                             hintText: '0',
                             keyboardType: TextInputType.number,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                              if (int.tryParse(v.trim()) == null) return 'Harus berupa angka';
+                              return null;
+                            },
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -272,6 +327,11 @@ class LaporanPage extends GetView<LaporanController> {
                           controller: controller.jumlahAyamMatiController,
                           hintText: '0',
                           keyboardType: TextInputType.number,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                            if (int.tryParse(v.trim()) == null) return 'Harus berupa angka';
+                            return null;
+                          },
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -291,6 +351,11 @@ class LaporanPage extends GetView<LaporanController> {
                           controller: controller.rataBobotController,
                           hintText: '0',
                           keyboardType: TextInputType.number,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                            if (double.tryParse(v.trim()) == null) return 'Harus berupa angka';
+                            return null;
+                          },
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -365,11 +430,16 @@ class LaporanPage extends GetView<LaporanController> {
                     color: AppColors.primaryGreen,
                     onPressed: controller.isLoading.value
                         ? null
-                        : () => controller.submit(),
+                        : () {
+                            if (_formKey.currentState?.validate() ?? false) {
+                              controller.submit();
+                            }
+                          },
                   ),
                   const SizedBox(height: 20),
                 ],
               ],
+              ),
             ),
           ),
         );

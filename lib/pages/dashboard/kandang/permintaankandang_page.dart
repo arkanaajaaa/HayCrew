@@ -8,7 +8,9 @@ import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CKandang/permintaancontroller.dart';
 
 class PermintaanKandangPage extends GetView<PermintaanController> {
-  const PermintaanKandangPage({Key? key}) : super(key: key);
+  PermintaanKandangPage({Key? key}) : super(key: key);
+
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +22,9 @@ class PermintaanKandangPage extends GetView<PermintaanController> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
-        child: Column(
+        child: Form(
+          key: _formKey,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 8),
@@ -54,9 +58,10 @@ class PermintaanKandangPage extends GetView<PermintaanController> {
             _KeteranganField(),
             const SizedBox(height: 32),
 
-            _SubmitButton(),
+            _SubmitButton(formKey: _formKey),
             const SizedBox(height: 24),
           ],
+          ),
         ),
       ),
     );
@@ -166,7 +171,11 @@ class _KeperluanField extends GetView<PermintaanController> {
 
   @override
   Widget build(BuildContext context) {
-    return CTextField(controller: controller.keperluanController, hintText: '');
+    return CTextField(
+      controller: controller.keperluanController,
+      hintText: '',
+      validator: (v) => (v == null || v.trim().isEmpty) ? 'Keperluan wajib diisi' : null,
+    );
   }
 }
 
@@ -192,6 +201,9 @@ class _NominalField extends GetView<PermintaanController> {
           hintText:        controller.nominalHint,
           keyboardType:    controller.nominalKeyboardType,
           inputFormatters: controller.nominalInputFormatters,
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? '${controller.nominalLabel.replaceAll('*', '')} wajib diisi'
+              : null,
         ),
       ),
     );
@@ -212,14 +224,21 @@ class _KeteranganField extends GetView<PermintaanController> {
 }
 
 class _SubmitButton extends GetView<PermintaanController> {
-  const _SubmitButton();
+  final GlobalKey<FormState> formKey;
+  const _SubmitButton({required this.formKey});
 
   @override
   Widget build(BuildContext context) {
     return Obx(
       () => CButton(
         text:         controller.isLoading.value ? 'Mengirim...' : 'Kirim',
-        onPressed:    controller.isLoading.value ? null : () => controller.submit(),
+        onPressed:    controller.isLoading.value
+            ? null
+            : () {
+                if (formKey.currentState?.validate() ?? false) {
+                  controller.submit();
+                }
+              },
         color:        AppColors.primaryGreen,
         fontSize:     16,
         fontWeight:   FontWeight.w600,

@@ -1,39 +1,67 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CButton.dart';
+import '../../../constants/api_constant.dart';
 import '../../../constants/app_colors.dart';
 import '../../../controllers/home_controller.dart';
 import '../../../components/calender_widget.dart';
 import '../../../components/status_card_widget.dart';
 
-class HomePageKandang extends StatelessWidget {
-  const HomePageKandang({Key? key}) : super(key: key);
+class HomePageKandang extends StatefulWidget {
+  const HomePageKandang({super.key});
+
+  @override
+  State<HomePageKandang> createState() => _HomePageKandangState();
+}
+
+class _HomePageKandangState extends State<HomePageKandang> {
+  final _calendarKey = GlobalKey<CalendarWidgetState>();
+  late final HomeController _controller;
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.find<HomeController>();
+    // Satu timer bersama buat status permintaan + kalender, biar gak ada
+    // dua Timer.periodic nembak dua request terpisah tiap siklus.
+    _pollTimer = Timer.periodic(ApiConstant.pollInterval, (_) {
+      _controller.loadStatusPermintaan(showLoading: false);
+      _calendarKey.currentState?.refresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final HomeController controller = Get.find<HomeController>();
-
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            _HomeHeader(controller: controller),
+            _HomeHeader(controller: _controller),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: controller.refreshData,
+                onRefresh: _controller.refreshData,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CalendarWidget(
+                        key: _calendarKey,
                         onDateSelected: (date) =>
-                            print('Selected date: $date'),
-                        token: controller.token,
+                            debugPrint('Selected date: $date'),
+                        token: _controller.token,
                       ),
-                      _HomeActionButtons(controller: controller),
+                      _HomeActionButtons(controller: _controller),
                       const SizedBox(height: 24),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
@@ -46,7 +74,7 @@ class HomePageKandang extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _HomeStatusList(controller: controller),
+                      _HomeStatusList(controller: _controller),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -137,8 +165,8 @@ class _HomeHeader extends StatelessWidget {
                 size: 24,
               ),
               onPressed: controller.navigateToNotifications,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: 'Notifikasi',
             ),
           ),
         ],

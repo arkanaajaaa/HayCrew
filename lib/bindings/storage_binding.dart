@@ -6,7 +6,11 @@ import '../controllers/profilecontroller.dart';
 class StorageBinding extends Bindings {
   @override
   void dependencies() {
-    Get.put<NavbarController>(NavbarController(), permanent: true);
+    if (Get.isRegistered<NavbarController>()) {
+      Get.find<NavbarController>().changeTab(0);
+    } else {
+      Get.put<NavbarController>(NavbarController(), permanent: true);
+    }
     Get.put<StorageHomeController>(StorageHomeController());
 
     Get.lazyPut<ProfilController>(() => ProfilController(), fenix: true);

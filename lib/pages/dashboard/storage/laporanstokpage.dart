@@ -7,6 +7,7 @@ import 'package:haycrew_app/components/CAppbar.dart';
 import 'package:haycrew_app/components/CDaterangepicker.dart';
 import 'package:haycrew_app/components/CDropdownfield.dart';
 import 'package:haycrew_app/components/CUploadimagepage.dart';
+import 'package:haycrew_app/components/CPendingSyncSection.dart';
 import '../../../constants/app_colors.dart';
 
 class LaporanStokPage extends GetView<LaporanStokController> {
@@ -26,6 +27,20 @@ class LaporanStokPage extends GetView<LaporanStokController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Obx(() => CPendingSyncSection(
+                    items: controller.pendingLaporanGudang.map((item) {
+                      return CPendingSyncItem(
+                        id: item['id'] as int,
+                        title: 'Laporan Gudang ${item['tanggal'] ?? ''}',
+                        subtitle: '${item['tempat_pendistribusian'] ?? '-'}',
+                      );
+                    }).toList(),
+                    isSyncing: (id) => controller.isSyncing.contains(id),
+                    onRetry: (id) => controller.retrySync(
+                      controller.pendingLaporanGudang.firstWhere((l) => l['id'] == id),
+                    ),
+                    onDelete: (id) => controller.deleteLaporanGudang(id),
+                  )),
               Obx(
                 () => CDateRangePicker(
                   displayText: controller.formattedDate.value,
@@ -38,7 +53,7 @@ class LaporanStokPage extends GetView<LaporanStokController> {
               const SizedBox(height: 8),
               _buildStokDagingHeader(context),
               const SizedBox(height: 10),
-              Obx(() => _buildStokDagingListView()),
+              Obx(() => _buildStokDagingListView(context)),
               const SizedBox(height: 18),
 
               _buildLabel(theme, 'Tempat Pendistribusian', required: true),
@@ -154,7 +169,7 @@ class LaporanStokPage extends GetView<LaporanStokController> {
     );
   }
 
-  Widget _buildStokDagingListView() {
+  Widget _buildStokDagingListView(BuildContext context) {
     final items = controller.stokDagingList;
 
     if (items.isEmpty) {
@@ -181,6 +196,23 @@ class LaporanStokPage extends GetView<LaporanStokController> {
             padding: const EdgeInsets.only(right: 12),
             child: const Icon(Icons.delete, color: Colors.red),
           ),
+          confirmDismiss: (_) => showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Hapus Item?'),
+              content: Text('Hapus ${item.jenis} (${item.jumlah}) dari daftar stok daging?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          ).then((confirmed) => confirmed ?? false),
           onDismissed: (_) => controller.removeStokDaging(item.id),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),

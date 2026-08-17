@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_colors.dart';
@@ -10,48 +9,35 @@ class CalendarWidget extends StatefulWidget {
   final String token;
 
   const CalendarWidget({
-    Key? key,
+    super.key,
     this.onDateSelected,
     required this.token,
-  }) : super(key: key);
+  });
 
   @override
-  State<CalendarWidget> createState() => _CalendarWidgetState();
+  State<CalendarWidget> createState() => CalendarWidgetState();
 }
 
-class _CalendarWidgetState extends State<CalendarWidget> {
-  // Interval polling biar event baru dari website (tambah/edit/hapus)
-  // otomatis kesinkron ke app tanpa perlu buka ulang halaman. Sama
-  // dengan REFRESH_INTERVAL_MS di admin-haycrew (Sidebar.jsx) supaya
-  // dua sisi punya "kesegaran" data yang selaras.
-  static const _pollInterval = Duration(seconds: 30);
-
+class CalendarWidgetState extends State<CalendarWidget> {
   Map<DateTime, List<CalendarEventModel>> _events = {};
   DateTime _selectedWeekStart = DateTime.now();
   bool _isLoading = false;
-  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _selectedWeekStart = _getStartOfWeek(DateTime.now());
     _loadEvents();
-    _pollTimer = Timer.periodic(
-      _pollInterval,
-      (_) => _loadEvents(showLoading: false),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pollTimer?.cancel();
-    super.dispose();
   }
 
   DateTime _getStartOfWeek(DateTime date) {
     final daysFromMonday = date.weekday - 1;
     return date.subtract(Duration(days: daysFromMonday));
   }
+
+  /// Dipanggil dari luar (lihat HomePageKandang) biar refresh-nya nyatu
+  /// sama polling status permintaan — gak perlu Timer terpisah di sini.
+  Future<void> refresh() => _loadEvents(showLoading: false);
 
   Future<void> _loadEvents({bool showLoading = true}) async {
     if (showLoading) setState(() => _isLoading = true);
@@ -129,22 +115,20 @@ class _CalendarWidgetState extends State<CalendarWidget> {
             IconButton(
               icon: const Icon(Icons.chevron_left, size: 20),
               onPressed: _previousWeek,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: 'Minggu sebelumnya',
             ),
-            const SizedBox(width: 12),
             IconButton(
               icon: const Icon(Icons.chevron_right, size: 20),
               onPressed: _nextWeek,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: 'Minggu berikutnya',
             ),
-            const SizedBox(width: 12),
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
               onPressed: _loadEvents,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: 'Muat ulang',
             ),
           ],
         ),
@@ -201,6 +185,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         ),
         child: Stack(
           alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
             Column(
               mainAxisAlignment: MainAxisAlignment.center,

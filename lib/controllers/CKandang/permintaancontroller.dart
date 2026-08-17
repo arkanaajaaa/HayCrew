@@ -5,14 +5,17 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
 import 'package:haycrew_app/components/CSuccessSplash.dart';
+import 'package:haycrew_app/utils/error_utils.dart';
+import 'package:haycrew_app/utils/currency_input_formatter.dart';
 
 enum JenisPermintaan { barang, dana }
 
 class PermintaanController extends GetxController {
-  static const String baseUrl = 'https://api.haycrew.id';
+  static const String baseUrl = ApiConstant.baseUrl;
 
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
@@ -40,7 +43,7 @@ class PermintaanController extends GetxController {
 
   List<TextInputFormatter>? get nominalInputFormatters =>
       jenisPermintaan.value == JenisPermintaan.dana
-      ? [FilteringTextInputFormatter.digitsOnly]
+      ? [FilteringTextInputFormatter.digitsOnly, RupiahInputFormatter()]
       : null;
 
   String get submitButtonText => isLoading.value ? 'Mengirim...' : 'Kirim';
@@ -99,7 +102,7 @@ class PermintaanController extends GetxController {
       };
 
       if (tipe == 'dana') {
-        body['harga'] = nominalController.text.trim();
+        body['harga'] = nominalController.text.trim().replaceAll('.', '');
       } else {
         body['jumlah'] = nominalController.text.trim();
       }
@@ -141,7 +144,7 @@ class PermintaanController extends GetxController {
     } catch (e, stack) {
       debugPrint('ERROR: $e');
       debugPrint('STACK: $stack');
-      _showError('Gagal mengirim permintaan: $e');
+      _showError(friendlyErrorMessage(e));
     } finally {
       isLoading.value = false;
     }

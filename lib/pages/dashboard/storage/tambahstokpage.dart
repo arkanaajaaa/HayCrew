@@ -7,10 +7,13 @@ import 'package:haycrew_app/components/CAppbar.dart';
 import 'package:haycrew_app/components/CDaterangepicker.dart';
 import 'package:haycrew_app/components/CDropdownfield.dart';
 import 'package:haycrew_app/components/CUploadimagepage.dart';
+import 'package:haycrew_app/components/CPendingSyncSection.dart';
 import '../../../constants/app_colors.dart';
 
 class TambahStokPage extends GetView<TambahStokController> {
-  const TambahStokPage({Key? key}) : super(key: key);
+  TambahStokPage({Key? key}) : super(key: key);
+
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +24,26 @@ class TambahStokPage extends GetView<TambahStokController> {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(18),
+          child: Form(
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Obx(() => CPendingSyncSection(
+                    items: controller.pendingTambahStok.map((item) {
+                      return CPendingSyncItem(
+                        id: item['id'] as int,
+                        title: 'Tambah Stok ${item['tanggal'] ?? ''}',
+                        subtitle:
+                            '${item['stok_masuk'] ?? '-'} ekor • ${item['tempat_pendistribusian'] ?? '-'}',
+                      );
+                    }).toList(),
+                    isSyncing: (id) => controller.isSyncing.contains(id),
+                    onRetry: (id) => controller.retrySync(
+                      controller.pendingTambahStok.firstWhere((l) => l['id'] == id),
+                    ),
+                    onDelete: (id) => controller.deleteTambahStok(id),
+                  )),
               Obx(
                 () => CDateRangePicker(
                   displayText: controller.formattedDate.value,
@@ -41,6 +61,11 @@ class TambahStokPage extends GetView<TambahStokController> {
                       controller: controller.stokMasukController,
                       hintText: '0',
                       keyboardType: TextInputType.number,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                        if (int.tryParse(v.trim()) == null) return 'Harus berupa angka';
+                        return null;
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -96,12 +121,18 @@ class TambahStokPage extends GetView<TambahStokController> {
                   fontSize: 16,
                   borderRadius: 8,
                   color: AppColors.primaryGreen,
-                  onPressed:
-                      controller.isLoading.value ? null : controller.submit,
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () {
+                          if (_formKey.currentState?.validate() ?? false) {
+                            controller.submit();
+                          }
+                        },
                 ),
               ),
               const SizedBox(height: 20),
             ],
+          ),
           ),
         ),
       ),

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
 import 'package:haycrew_app/services/dbService.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,7 +15,7 @@ import 'package:haycrew_app/components/CSuccessSplash.dart';
 class LaporanController extends GetxController {
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
-  static const String baseUrl = 'https://api.haycrew.id';
+  static const String baseUrl = ApiConstant.baseUrl;
 
   final _db = DBHelper();
 
@@ -30,6 +31,7 @@ class LaporanController extends GetxController {
   final laporanList = <Map<String, dynamic>>[].obs;
 
   final isCheckingSiklus = true.obs;
+  final checkSiklusError = false.obs;
   final siklusAktifId = Rxn<int>();
   final isLaporanPertama = true.obs;
   final umurHariSiklus = 0.obs;
@@ -46,11 +48,14 @@ class LaporanController extends GetxController {
 
   Future<void> checkSiklusAktif() async {
     isCheckingSiklus.value = true;
+    checkSiklusError.value = false;
     try {
-      final res = await http.get(
-        Uri.parse('$baseUrl/api/siklus-kandang/aktif'),
-        headers: {'Accept': 'application/json', 'Authorization': 'Bearer $_token'},
-      );
+      final res = await http
+          .get(
+            Uri.parse('$baseUrl/api/siklus-kandang/aktif'),
+            headers: {'Accept': 'application/json', 'Authorization': 'Bearer $_token'},
+          )
+          .timeout(const Duration(seconds: 15));
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         final data = decoded['data'];
@@ -65,9 +70,15 @@ class LaporanController extends GetxController {
           siklusAktifId.value = null;
           isLaporanPertama.value = true;
         }
+      } else {
+        siklusAktifId.value = null;
+        checkSiklusError.value = true;
       }
     } catch (_) {
-      // biarin default kalau gagal fetch (offline dll)
+      // Gagal fetch (offline dll) — beda dari "genuinely belum ada siklus",
+      // jangan biarin siklusAktifId tetap null tanpa nandain ini error.
+      siklusAktifId.value = null;
+      checkSiklusError.value = true;
     } finally {
       isCheckingSiklus.value = false;
     }
@@ -172,7 +183,7 @@ class LaporanController extends GetxController {
       final req = http.MultipartRequest('POST', Uri.parse('$baseUrl/api/laporan-kandang'));
       req.headers.addAll({'Accept': 'application/json', 'Authorization': 'Bearer $_token'});
       data.forEach((k, v) {
-        if (['foto', 'is_synced', 'created_at'].contains(k)) return;
+        if (['id', 'foto', 'is_synced', 'created_at'].contains(k)) return;
         if (v != null) req.fields[k] = v.toString();
       });
       if (data['foto'] != null) {
@@ -235,10 +246,35 @@ class LaporanController extends GetxController {
 
   Future<void> fetchLaporan() async => laporanList.assignAll(await _db.getAllLaporan());
 
+  /// Laporan yang tersimpan lokal tapi belum berhasil dikirim ke server.
+  List<Map<String, dynamic>> get pendingLaporan =>
+      laporanList.where((l) => l['is_synced'] == 0).toList();
+
   Future<void> deleteLaporan(int id) async {
     await _db.deleteLaporan(id);
     await fetchLaporan();
     Get.snackbar('Berhasil', 'Laporan dihapus.');
+  }
+
+  final isSyncing = <int>{}.obs;
+
+  Future<bool> retrySync(Map<String, dynamic> item) async {
+    final id = item['id'] as int;
+    isSyncing.add(id);
+    try {
+      final success = await _submitToApi(item);
+      if (success) {
+        await _db.markAsSynced(id);
+        await fetchLaporan();
+        Get.snackbar('Berhasil', 'Laporan berhasil disinkron.');
+      } else {
+        Get.snackbar('Gagal', 'Masih belum bisa terkirim. Coba lagi nanti.',
+            backgroundColor: Colors.orange.shade100);
+      }
+      return success;
+    } finally {
+      isSyncing.remove(id);
+    }
   }
 
   void _resetForm() {
