@@ -262,7 +262,6 @@ class LaporanStokPage extends GetView<LaporanStokController> {
             const Text('Jenis Daging', style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
 
-            // Radio Button Pilihan Whole / Parting
             Obx(
               () => Row(
                 children: [

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/status_permintaan_model.dart';
 import '../constants/app_colors.dart';
 
-/// Widget untuk menampilkan card status permintaan
-/// Reusable component yang bisa dipanggil dari mana saja
 class StatusCardWidget extends StatelessWidget {
   final StatusPermintaanModel status;
   final VoidCallback? onTap;
@@ -20,9 +18,9 @@ class StatusCardWidget extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.lightGreen.withOpacity(0.08),
+          color: AppColors.textFieldBg.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.lightGreen.withOpacity(0.25)),
+          border: Border.all(color: AppColors.textFieldBg.withOpacity(0.25)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -33,17 +31,17 @@ class StatusCardWidget extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Date Section
+
             _buildDateSection(),
 
             const SizedBox(width: 20),
 
-            // Content Section
+
             Expanded(child: _buildContentSection()),
 
             const SizedBox(width: 12),
 
-            // Status Badge
+
             _buildStatusBadge(),
           ],
         ),
@@ -51,7 +49,7 @@ class StatusCardWidget extends StatelessWidget {
     );
   }
 
-  /// Build date section (day & month)
+
   Widget _buildDateSection() {
     return Column(
       children: [
@@ -77,7 +75,7 @@ class StatusCardWidget extends StatelessWidget {
     );
   }
 
-  /// Build content section (title & subtitle)
+
   Widget _buildContentSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +103,7 @@ class StatusCardWidget extends StatelessWidget {
     );
   }
 
-  /// Build status badge
+
   Widget _buildStatusBadge() {
     final color = _getStatusColor(status.status);
     return Container(
@@ -125,7 +123,7 @@ class StatusCardWidget extends StatelessWidget {
     );
   }
 
-  /// Get color based on status
+
   Color _getStatusColor(StatusType type) {
     switch (type) {
       case StatusType.accepted:

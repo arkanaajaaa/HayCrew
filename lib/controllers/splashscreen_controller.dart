@@ -3,14 +3,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
 import 'package:haycrew_app/utils/name_utils.dart';
 
-/// SplashscreenController — cek sesi login yang tersimpan (token + user)
-/// begitu app dibuka. Kalau masih valid, langsung lempar ke dashboard yang
-/// sesuai role (kandang/gudang) TANPA perlu login ulang. Kalau tidak ada
-/// atau datanya rusak, baru diarahkan ke halaman Login.
-///
-/// Ini yang bikin akun "tetap login" walau app di-close — karena GetStorage
-/// memang sudah nyimpen token ke disk, splash ini cuma nambahin pengecekan
-/// yang tadinya belum ada di main.dart (yang selalu buka ke Login).
+
 class SplashscreenController extends GetxController {
   final _storage = GetStorage();
 
@@ -21,8 +14,7 @@ class SplashscreenController extends GetxController {
   }
 
   Future<void> _checkSession() async {
-    // Jeda kecil biar splash sempat kelihatan sebentar, sekaligus kasih
-    // waktu GetStorage benar-benar siap dibaca.
+
     await Future.delayed(const Duration(milliseconds: 800));
 
     final token = _storage.read('token');

@@ -1,4 +1,3 @@
-// lib/pages/dashboard/kandang/riwayatkandang_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CAppbar.dart';
@@ -7,8 +6,7 @@ import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/home_controller.dart';
 import 'package:haycrew_app/models/status_permintaan_model.dart';
 
-/// Riwayat Kandang — menampilkan seluruh data Status Permintaan.
-/// Reuse 100% dari [HomeController.statusList]
+
 class RiwayatKandangPage extends StatefulWidget {
   const RiwayatKandangPage({Key? key}) : super(key: key);
 
@@ -165,7 +163,6 @@ class _RiwayatKandangCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
 
-            // Nama permintaan + deskripsi
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +189,6 @@ class _RiwayatKandangCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
 
-            // Status badge — Hijau = Diterima, Kuning = Pending, Merah = Ditolak
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(

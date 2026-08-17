@@ -75,8 +75,6 @@ class LaporanController extends GetxController {
         checkSiklusError.value = true;
       }
     } catch (_) {
-      // Gagal fetch (offline dll) — beda dari "genuinely belum ada siklus",
-      // jangan biarin siklusAktifId tetap null tanpa nandain ini error.
       siklusAktifId.value = null;
       checkSiklusError.value = true;
     } finally {
@@ -246,7 +244,6 @@ class LaporanController extends GetxController {
 
   Future<void> fetchLaporan() async => laporanList.assignAll(await _db.getAllLaporan());
 
-  /// Laporan yang tersimpan lokal tapi belum berhasil dikirim ke server.
   List<Map<String, dynamic>> get pendingLaporan =>
       laporanList.where((l) => l['is_synced'] == 0).toList();
 

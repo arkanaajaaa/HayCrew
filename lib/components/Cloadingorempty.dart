@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// CLoadingOrEmpty — Reusable widget untuk state loading, kosong, dan error.
-///
-/// Dipakai di semua halaman yang punya list data agar konsisten.
 
 class CLoadingOrEmpty extends StatelessWidget {
   final _Type _type;

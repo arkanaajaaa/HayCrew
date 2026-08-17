@@ -23,7 +23,6 @@ class LoginPage extends StatelessWidget {
                   
                   const SizedBox(height: 60),
 
-                  /// LOGO
                   Image.asset(
                     'assets/images/Logo.png',
                     width: 230,
@@ -31,7 +30,6 @@ class LoginPage extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  /// TEXT SELAMAT DATANG
                   const Text(
                     'Selamat Datang di',
                     style: TextStyle(
@@ -51,7 +49,6 @@ class LoginPage extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  /// EMAIL
                   CTextField(
                     controller: controller.emailController,
                     hintText: "Email",
@@ -62,7 +59,6 @@ class LoginPage extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  /// PASSWORD
                   Obx(
                     () => TextField(
                       controller: controller.passwordController,
@@ -100,7 +96,6 @@ class LoginPage extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  /// BUTTON LOGIN
                   Obx(
                     () => CButton(
                       text: controller.isLoading.value

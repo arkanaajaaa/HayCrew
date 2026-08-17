@@ -1,8 +1,3 @@
-/// lib/components/CStokItemCard.dart
-///
-/// CStokItemCard — kartu item stok reusable untuk dashboard Storage.
-/// Dipakai di HomePageStorage dan LaporanStokPage supaya tampilan konsisten.
-
 import 'package:flutter/material.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
@@ -53,8 +48,7 @@ class CStokItemCard extends StatelessWidget {
     }
   }
 
-  // Format sama seperti StorageHomeController._formatBerat: tanpa desimal
-  // kalau bulat, satu desimal kalau tidak, pakai koma ala Indonesia.
+
   static String _formatBerat(double value) {
     return value
         .toStringAsFixed(value.truncateToDouble() == value ? 0 : 1)
@@ -72,9 +66,9 @@ class CStokItemCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.lightGreen.withOpacity(0.08),
+          color: AppColors.textFieldBg.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.lightGreen.withOpacity(0.25)),
+          border: Border.all(color: AppColors.textFieldBg.withOpacity(0.25)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),

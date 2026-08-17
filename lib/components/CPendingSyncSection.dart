@@ -13,9 +13,7 @@ class CPendingSyncItem {
   });
 }
 
-/// Banner buat nampilin laporan yang tersimpan lokal (offline) tapi belum
-/// berhasil dikirim ke server — sebelumnya data ini "hilang" dari UI, cuma
-/// numpuk di SQLite tanpa cara buat diliat, di-retry, atau dihapus user.
+
 class CPendingSyncSection extends StatelessWidget {
   final List<CPendingSyncItem> items;
   final bool Function(int id) isSyncing;

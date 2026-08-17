@@ -11,7 +11,6 @@ class MainShellPageStorage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // NavbarController sudah di-register di StorageBinding
     final NavbarController navController = Get.find<NavbarController>();
 
     final List<Widget> pages = [

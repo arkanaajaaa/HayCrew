@@ -10,7 +10,7 @@ class CButton extends StatelessWidget {
   final double height;
   final IconData? icon;
   final double fontSize;
-  final FontWeight fontWeight; // 1. Tambahkan deklarasi variabel
+  final FontWeight fontWeight; 
 
   const CButton({
     super.key,
@@ -24,7 +24,7 @@ class CButton extends StatelessWidget {
     this.icon,
     this.fontSize = 18,
     this.fontWeight =
-        FontWeight.w600, // 2. Tambahkan di constructor dengan default w600
+        FontWeight.w600, 
   });
 
   @override
@@ -56,7 +56,7 @@ class CButton extends StatelessWidget {
                 style: TextStyle(
                   color: textColor,
                   fontSize: fontSize,
-                  fontWeight: fontWeight, // 3. Gunakan variabel di sini
+                  fontWeight: fontWeight, 
                   letterSpacing: 0.5,
                 ),
                 maxLines: 2,

@@ -62,12 +62,12 @@ class ProfilController extends GetxController {
     }
   }
 
-  // ─── Computed ─────────────────────────────────────────────────────────────
+
   String get statusLabel   => isActive.value ? 'Aktif' : 'Nonaktif';
   Color  get statusColor   => isActive.value ? AppColors.primaryGreen : AppColors.red;
   Color  get statusBgColor => isActive.value ? _activeBgColor : _inactiveBgColor;
 
-  // ─── Menu ─────────────────────────────────────────────────────────────────
+
   List<ProfilMenuItem> _buildMenuItems() => [
     ProfilMenuItem(
       icon: Icons.help_outline,
@@ -86,7 +86,7 @@ class ProfilController extends GetxController {
     ),
   ];
 
-// ─── Actions ──────────────────────────────────────────────────────────────
+
   void onTapRiwayatAktivitas() {
     final role = userRole.value.toLowerCase();
     if (role.contains('kandang')) {
@@ -98,16 +98,16 @@ class ProfilController extends GetxController {
     }
   }
 
-  // 2. Perbarui method onTapPusatBantuan ke link WhatsApp
+
   Future<void> onTapPusatBantuan() async {
-    const waUrl = 'https://wa.me/6281274734090'; // Menggunakan format nomor internasional +62
+    const waUrl = 'https://wa.me/6281274734090'; 
     final uri = Uri.parse(waUrl);
 
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(
           uri,
-          mode: LaunchMode.externalApplication, // Buka langsung di aplikasi WA/browser eksternal
+          mode: LaunchMode.externalApplication, 
         );
       } else {
         _showErrorSnackbar('Tidak dapat membuka WhatsApp');
@@ -118,7 +118,7 @@ class ProfilController extends GetxController {
   }
 
   void onTapKeluar() {
-    if (isLoggingOut.value) return; // cegah double-tap pas dialog kebuka
+    if (isLoggingOut.value) return; 
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -145,7 +145,7 @@ class ProfilController extends GetxController {
     if (isLoggingOut.value) return;
     isLoggingOut.value = true;
 
-    Get.back(); // tutup dialog konfirmasi dulu
+    Get.back(); 
 
     final token = _token;
     try {

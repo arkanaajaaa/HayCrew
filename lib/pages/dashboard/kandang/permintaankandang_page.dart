@@ -29,7 +29,6 @@ class PermintaanKandangPage extends GetView<PermintaanController> {
           children: [
             const SizedBox(height: 8),
 
-            // Tanggal — pakai CDateRangePicker sebagai display box biasa (single date)
             Obx(
               () => CDateRangePicker(
                 displayText: controller.formattedDate.value,

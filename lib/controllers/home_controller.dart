@@ -29,8 +29,6 @@ class HomeController extends GetxController {
     super.onInit();
     _loadArgs();
     loadStatusPermintaan();
-    // Polling-nya dijalankan satu timer bersama di HomePageKandang (biar
-    // nyatu sama refresh CalendarWidget), bukan timer sendiri di sini.
   }
 
   void _loadArgs() {
@@ -94,7 +92,7 @@ class HomeController extends GetxController {
   }
 
   int _statusPriority(dynamic status) {
-    final s = status.toString().split('.').last; // handle kalau status itu enum
+    final s = status.toString().split('.').last; 
     switch (s) {
       case 'pending':
         return 0;

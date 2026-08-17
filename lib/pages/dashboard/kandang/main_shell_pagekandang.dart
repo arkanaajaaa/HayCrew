@@ -1,4 +1,3 @@
-// lib/pages/dashboard/kandang/main_shell_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
@@ -14,7 +13,6 @@ class MainShellPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final NavbarController navController = Get.find<NavbarController>();
 
-    // Empat halaman yang di-swap di body
     final List<Widget> pages = [
       const HomePageKandang(),
       const RiwayatKandangPage(),

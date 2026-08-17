@@ -1,15 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// CDateRangePicker — Reusable date range field yang tampil seperti TextField.
-///
-/// Penggunaan:
-/// ```dart
-/// CDateRangePicker(
-///   displayText: controller.formattedDateRange,
-///   onTap: controller.onTapDatePicker,
-/// )
-/// ```
 class CDateRangePicker extends StatelessWidget {
   final String displayText;
   final VoidCallback onTap;

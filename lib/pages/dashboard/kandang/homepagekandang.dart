@@ -24,8 +24,6 @@ class _HomePageKandangState extends State<HomePageKandang> {
   void initState() {
     super.initState();
     _controller = Get.find<HomeController>();
-    // Satu timer bersama buat status permintaan + kalender, biar gak ada
-    // dua Timer.periodic nembak dua request terpisah tiap siklus.
     _pollTimer = Timer.periodic(ApiConstant.pollInterval, (_) {
       _controller.loadStatusPermintaan(showLoading: false);
       _calendarKey.currentState?.refresh();
@@ -158,16 +156,6 @@ class _HomeHeader extends StatelessWidget {
               color: Colors.grey[100],
               shape: BoxShape.circle,
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.notifications_outlined,
-                color: AppColors.primaryGreen,
-                size: 24,
-              ),
-              onPressed: controller.navigateToNotifications,
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-              tooltip: 'Notifikasi',
-            ),
           ),
         ],
       ),
@@ -175,10 +163,7 @@ class _HomeHeader extends StatelessWidget {
   }
 }
 
-/// Dua tombol aksi utama di halaman beranda.
-/// Menggunakan CButton dari components/CButton.dart.
-/// Masing-masing memanggil fungsi navigasi di HomeController
-/// yang melakukan Get.toNamed ke route LaporanPage / PermintaanPage.
+
 class _HomeActionButtons extends StatelessWidget {
   final HomeController controller;
 

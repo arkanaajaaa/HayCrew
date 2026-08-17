@@ -2,13 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 
-/// CTextField — Reusable text field untuk semua halaman di HayCrew.
-///
-/// Update dari versi sebelumnya:
-/// - Tambah [onChanged] callback untuk validasi realtime
-/// - Tambah [validator] — bisa dipakai dengan Form widget
-/// - Tambah [enabled] — untuk disabled state
-/// - [maxLines] sudah ada, tetap dipertahankan
+
 class CTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
@@ -21,11 +15,11 @@ class CTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final int maxLines;
 
-  // ─── Props baru ────────────────────────────────────────────────────────────
+
   final ValueChanged<String>? onChanged;
   final String? Function(String?)? validator;
   final bool enabled;
-  final Widget? suffixIcon; // untuk show/hide password dll.
+  final Widget? suffixIcon; 
 
   const CTextField({
     super.key,

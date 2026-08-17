@@ -35,8 +35,7 @@ class CalendarWidgetState extends State<CalendarWidget> {
     return date.subtract(Duration(days: daysFromMonday));
   }
 
-  /// Dipanggil dari luar (lihat HomePageKandang) biar refresh-nya nyatu
-  /// sama polling status permintaan — gak perlu Timer terpisah di sini.
+
   Future<void> refresh() => _loadEvents(showLoading: false);
 
   Future<void> _loadEvents({bool showLoading = true}) async {
@@ -44,7 +43,6 @@ class CalendarWidgetState extends State<CalendarWidget> {
 
     final events = await CalendarService.fetchEvents(token: widget.token);
 
-    // FIX: Cek apakah widget masih terpasang sebelum memanggil setState
     if (!mounted) return;
 
     setState(() {

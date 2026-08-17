@@ -194,7 +194,6 @@ class LaporanPage extends GetView<LaporanController> {
                   onDelete: (id) => controller.deleteLaporan(id),
                 ),
 
-                // Banner info umur siklus
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -216,7 +215,6 @@ class LaporanPage extends GetView<LaporanController> {
                   ),
                 ),
 
-                // Banner peringatan kalau sudah lapor minggu ini
                 if (controller.sudahLaporMingguIni.value) ...[
                   const SizedBox(height: 10),
                   Container(
@@ -242,7 +240,6 @@ class LaporanPage extends GetView<LaporanController> {
                   ),
                 ],
 
-                // Tombol tandai panen kalau sudah boleh panen
                 if (controller.sudahBolehPanen.value) ...[
                   const SizedBox(height: 12),
                   CButton(
@@ -255,7 +252,6 @@ class LaporanPage extends GetView<LaporanController> {
                   ),
                 ],
 
-                // Opsi panen dini kalau belum waktunya
                 if (!controller.sudahBolehPanen.value) ...[
                   const SizedBox(height: 6),
                   Align(
@@ -273,7 +269,6 @@ class LaporanPage extends GetView<LaporanController> {
 
                 const SizedBox(height: 15),
 
-                // Form laporan disembunyikan kalau sudah lapor minggu ini
                 if (!controller.sudahLaporMingguIni.value) ...[
                   Text('Tanggal Laporan*', style: theme.textTheme.bodyMedium),
                   GestureDetector(

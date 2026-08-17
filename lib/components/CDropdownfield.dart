@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// CDropdownField — Reusable dropdown field untuk semua halaman di HayCrew.
-/// Tampilannya disamakan dengan CTextField/CDateRangePicker (filled, tanpa
-/// border, aksen hijau saat fokus) supaya semua field form konsisten.
+
 class CDropdownField extends StatelessWidget {
   final String? value;
   final String hintText;

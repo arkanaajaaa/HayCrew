@@ -1,4 +1,3 @@
-// lib/pages/dashboard/storage/riwayatstorage_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CAppbar.dart';
@@ -6,8 +5,6 @@ import 'package:haycrew_app/components/Cloadingorempty.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
 
-/// Riwayat Storage — menampilkan seluruh data Daftar Stok.
-/// Reuse 100% dari [StorageHomeController.stokList] (endpoint `/api/stok`),
 class RiwayatStoragePage extends StatefulWidget {
   const RiwayatStoragePage({Key? key}) : super(key: key);
 
@@ -142,7 +139,6 @@ class _RiwayatStorageCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Nama stok, jumlah, berat, info lain
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +179,6 @@ class _RiwayatStorageCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
 
-            // Status badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(

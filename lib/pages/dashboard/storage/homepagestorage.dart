@@ -59,9 +59,7 @@ class HomePageStorage extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HEADER — sama persis strukturnya dengan _HomeHeader di homepagekandang
-// ═══════════════════════════════════════════════════════════════════════════
+
 
 class _StorageHeader extends StatelessWidget {
   final StorageHomeController controller;
@@ -128,16 +126,6 @@ class _StorageHeader extends StatelessWidget {
               color: Colors.grey[100],
               shape: BoxShape.circle,
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.notifications_outlined,
-                color: AppColors.primaryGreen,
-                size: 24,
-              ),
-              onPressed: controller.navigateToNotifications,
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-              tooltip: 'Notifikasi',
-            ),
           ),
         ],
       ),
@@ -145,9 +133,6 @@ class _StorageHeader extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SUMMARY ROW — Stok Ayam (ekor) | Stok Keluar (ekor)
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _StorageSummaryRow extends StatelessWidget {
   final StorageHomeController controller;
@@ -231,10 +216,6 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ACTION BUTTONS — Tambah Stok | Laporan Stok
-// Menggunakan CButton yang sama seperti di homepagekandang
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _StorageActionButtons extends StatelessWidget {
   final StorageHomeController controller;
@@ -273,10 +254,6 @@ class _StorageActionButtons extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STOK LIST — daftar item stok dengan indikator warna status
-// Pola Obx loading/empty/data sama persis dengan _HomeStatusList
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _StorageStokList extends StatelessWidget {
   final StorageHomeController controller;
@@ -285,12 +262,12 @@ class _StorageStokList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // State 1: loading
+
       if (controller.isLoading.value) {
         return const CLoadingOrEmpty.loading();
       }
 
-      // State 2: gagal fetch dan cache lokal juga kosong
+
       if (controller.hasLoadError.value) {
         return CLoadingOrEmpty.error(
           message: 'Gagal memuat data stok',
@@ -299,7 +276,7 @@ class _StorageStokList extends StatelessWidget {
         );
       }
 
-      // State 3: kosong (genuinely gak ada stok)
+
       if (controller.stokList.isEmpty) {
         return const CLoadingOrEmpty.empty(
           message: 'Tidak ada data stok',
@@ -307,9 +284,7 @@ class _StorageStokList extends StatelessWidget {
         );
       }
 
-      // State 4: ada data — dibatasin sama kayak _HomeStatusList di dashboard
-      // kandang, biar preview di homepage gak me-render ratusan card
-      // sekaligus. Daftar lengkap tetap bisa dilihat lewat halaman Riwayat.
+
       const int maxVisible = 8;
       final visibleStokList = controller.stokList.take(maxVisible).toList();
       return Column(
