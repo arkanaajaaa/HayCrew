@@ -12,7 +12,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   get: ^4.7.2
-  shared_preferences: ^2.5.4
   intl: ^0.20.2
   http: ^1.6.0
   google_sign_in: ^6.1.5
