@@ -76,17 +76,17 @@ class TambahStokPage extends GetView<TambahStokController> {
               ),
               const SizedBox(height: 4),
               const Text(
-                '* Jumlah ayam yang diterima dari kandang',
+                '* Jumlah ayam yang diterima dari Rumah Potong Ayam*',
                 style: TextStyle(fontSize: 12, color: AppColors.primaryGreen),
               ),
               const SizedBox(height: 18),
 
-              Text('Tempat Pendistribusian*', style: theme.textTheme.bodyMedium),
+              Text('Gunang Penerima*', style: theme.textTheme.bodyMedium),
               const SizedBox(height: 6),
               Obx(
                 () => CDropdownField(
                   value: controller.selectedTempatDistribusi.value,
-                  hintText: 'Pilih Tempat Pendistribusian',
+                  hintText: 'Pilih Gudang Penerima',
                   items: controller.gudangOptions.toList(),
                   onChanged: (newValue) {
                     if (newValue != null) {
