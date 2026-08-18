@@ -11,7 +11,7 @@ class HomeBinding extends Bindings {
     } else {
       Get.put<NavbarController>(NavbarController(), permanent: true);
     }
-    Get.put<HomeController>(HomeController(), permanent: true);
+    Get.put<HomeController>(HomeController());
 
     Get.lazyPut<ProfilController>(() => ProfilController(), fenix: true);
   }
