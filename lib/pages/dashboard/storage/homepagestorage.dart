@@ -1,38 +1,68 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CButton.dart';
 import 'package:haycrew_app/components/Cloadingorempty.dart';
 import 'package:haycrew_app/components/CStokItemCard.dart';
+import 'package:haycrew_app/components/calender_widget.dart';
+import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
 
-class HomePageStorage extends StatelessWidget {
-  const HomePageStorage({Key? key}) : super(key: key);
+class HomePageStorage extends StatefulWidget {
+  const HomePageStorage({super.key});
+
+  @override
+  State<HomePageStorage> createState() => _HomePageStorageState();
+}
+
+class _HomePageStorageState extends State<HomePageStorage> {
+  final _calendarKey = GlobalKey<CalendarWidgetState>();
+  late final StorageHomeController _controller;
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.find<StorageHomeController>();
+    _pollTimer = Timer.periodic(ApiConstant.pollInterval, (_) {
+      _controller.refreshData(showLoading: false);
+      _calendarKey.currentState?.refresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final StorageHomeController controller =
-        Get.find<StorageHomeController>();
-
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            _StorageHeader(controller: controller),
+            _StorageHeader(controller: _controller),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: controller.refreshData,
+                onRefresh: _controller.refreshData,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      CalendarWidget(
+                        key: _calendarKey,
+                        token: _controller.token,
+                      ),
+                      _GudangFilterRow(controller: _controller),
+                      const SizedBox(height: 12),
+                      _StorageSummaryRow(controller: _controller),
                       const SizedBox(height: 16),
-                      _StorageSummaryRow(controller: controller),
-                      const SizedBox(height: 16),
-                      _StorageActionButtons(controller: controller),
+                      _StorageActionButtons(controller: _controller),
                       const SizedBox(height: 24),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
@@ -45,7 +75,7 @@ class HomePageStorage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _StorageStokList(controller: controller),
+                      _StorageStokList(controller: _controller),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -134,6 +164,61 @@ class _StorageHeader extends StatelessWidget {
 }
 
 
+class _GudangFilterRow extends StatelessWidget {
+  final StorageHomeController controller;
+  const _GudangFilterRow({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final options = controller.gudangFilterOptions;
+      if (options.length <= 1) return const SizedBox.shrink();
+
+      return SizedBox(
+        height: 36,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: options.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final name = options[index];
+            // Obx per-chip (bukan cuma satu Obx di luar) karena ListView.
+            // separated ngerender itemBuilder secara lazy di luar siklus
+            // build Obx terluar — kalau selectedGudang cuma dibaca di sini
+            // tanpa Obx sendiri, GetX nggak pernah "lihat" dependency-nya
+            // jadi highlight chip nggak pernah update pas ditap.
+            return Obx(() {
+              final isSelected = controller.selectedGudang.value == name;
+              return InkWell(
+                onTap: () => controller.setGudangFilter(name),
+                borderRadius: BorderRadius.circular(20),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primaryGreen : AppColors.textFieldBg.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? AppColors.white : Colors.grey[700],
+                    ),
+                  ),
+                ),
+              );
+            });
+          },
+        ),
+      );
+    });
+  }
+}
+
 class _StorageSummaryRow extends StatelessWidget {
   final StorageHomeController controller;
   const _StorageSummaryRow({required this.controller});
@@ -185,18 +270,36 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Card netral (senada sama CalendarWidget/StatusCardWidget/CStokItemCard)
+    // dengan aksen warna cuma di ikon & angka — biar semua card di halaman
+    // ini kerasa satu keluarga visual, bukan blok warna sendiri-sendiri.
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: AppColors.textFieldBg.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: AppColors.textFieldBg.withOpacity(0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 8),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(height: 10),
           Text(
             value,
             style: TextStyle(

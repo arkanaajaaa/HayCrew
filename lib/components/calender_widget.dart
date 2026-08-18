@@ -79,9 +79,20 @@ class CalendarWidgetState extends State<CalendarWidget> {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(vertical: 16),
+      // Disamain sama gaya card lain di halaman (StatusCardWidget,
+      // CStokItemCard) — tint krem tipis + border + shadow halus — biar
+      // nyatu, nggak nongol sebagai blok warna khaki solid sendirian.
       decoration: BoxDecoration(
-        color: AppColors.calendarBackground,
+        color: AppColors.textFieldBg.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.textFieldBg.withOpacity(0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,9 +115,23 @@ class CalendarWidgetState extends State<CalendarWidget> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          DateFormat('MMMM yyyy', 'id_ID').format(_selectedWeekStart),
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        InkWell(
+          onTap: _showMonthPicker,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormat('MMMM yyyy', 'id_ID').format(_selectedWeekStart),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_drop_down, size: 20),
+              ],
+            ),
+          ),
         ),
         Row(
           children: [
@@ -131,6 +156,78 @@ class CalendarWidgetState extends State<CalendarWidget> {
           ],
         ),
       ],
+    );
+  }
+
+  /// Dialog pilih bulan/tahun langsung, biar nggak perlu klik panah
+  /// minggu-per-minggu buat loncat ke bulan yang jauh.
+  void _showMonthPicker() {
+    int pickYear = _selectedWeekStart.year;
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () => setDialogState(() => pickYear--),
+                  ),
+                  Text('$pickYear', style: const TextStyle(fontSize: 16)),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () => setDialogState(() => pickYear++),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 2,
+                    mainAxisSpacing: 4,
+                    crossAxisSpacing: 4,
+                  ),
+                  itemCount: 12,
+                  itemBuilder: (context, index) {
+                    final month = index + 1;
+                    final isSelected = pickYear == _selectedWeekStart.year &&
+                        month == _selectedWeekStart.month;
+                    return TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor:
+                            isSelected ? AppColors.primaryGreen.withOpacity(0.15) : null,
+                        foregroundColor:
+                            isSelected ? AppColors.primaryGreen : Colors.black87,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _selectedWeekStart = _getStartOfWeek(DateTime(pickYear, month, 1));
+                        });
+                        Navigator.of(dialogContext).pop();
+                        _loadEvents();
+                      },
+                      child: Text(DateFormat('MMM', 'id_ID').format(DateTime(pickYear, month))),
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Batal'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

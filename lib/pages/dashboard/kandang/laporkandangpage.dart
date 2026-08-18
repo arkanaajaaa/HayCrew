@@ -5,7 +5,6 @@ import 'package:haycrew_app/components/CTextfield.dart';
 import 'package:haycrew_app/components/CButton.dart';
 import 'package:haycrew_app/components/CAppBar.dart';
 import 'package:haycrew_app/components/CPendingSyncSection.dart';
-import 'package:haycrew_app/routes/app_routes.dart';
 import '../../../constants/app_colors.dart';
 
 class LaporanPage extends GetView<LaporanController> {
@@ -32,9 +31,7 @@ class LaporanPage extends GetView<LaporanController> {
     if (success) {
       Get.snackbar('Berhasil', 'Siklus ditandai sebagai panen.',
           backgroundColor: AppColors.primaryGreen.withOpacity(0.15));
-      Future.delayed(const Duration(milliseconds: 300), () {
-        Get.offAllNamed(AppRoutes.DASHBOARD_KANDANG);
-      });
+      Future.delayed(const Duration(milliseconds: 300), Get.back);
     } else {
       Get.snackbar('Gagal', 'Tidak bisa menandai panen. Coba lagi.',
           backgroundColor: Colors.red.shade100);
@@ -82,9 +79,7 @@ class LaporanPage extends GetView<LaporanController> {
     if (success) {
       Get.snackbar('Berhasil', 'Panen dini berhasil dicatat.',
           backgroundColor: AppColors.primaryGreen.withOpacity(0.15));
-      Future.delayed(const Duration(milliseconds: 300), () {
-        Get.offAllNamed(AppRoutes.DASHBOARD_KANDANG);
-      });
+      Future.delayed(const Duration(milliseconds: 300), Get.back);
     } else {
       Get.snackbar('Gagal', 'Tidak bisa menandai panen dini. Coba lagi.',
           backgroundColor: Colors.red.shade100);
@@ -302,7 +297,9 @@ class LaporanPage extends GetView<LaporanController> {
                             keyboardType: TextInputType.number,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) return 'Wajib diisi';
-                              if (int.tryParse(v.trim()) == null) return 'Harus berupa angka';
+                              final n = int.tryParse(v.trim());
+                              if (n == null) return 'Harus berupa angka';
+                              if (n <= 0) return 'Harus lebih dari 0';
                               return null;
                             },
                           ),
@@ -314,7 +311,17 @@ class LaporanPage extends GetView<LaporanController> {
                     const SizedBox(height: 10),
                   ],
 
-                  Text('Jumlah Ayam Mati*', style: theme.textTheme.bodyMedium),
+                  Text(
+                    controller.isLaporanPertama.value
+                        ? 'Jumlah Ayam Mati'
+                        : 'Jumlah Ayam Mati*',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  if (controller.isLaporanPertama.value)
+                    const Text(
+                      'Opsional untuk laporan pertama siklus ini',
+                      style: TextStyle(fontSize: 12, color: AppColors.primaryGreen),
+                    ),
                   Row(
                     children: [
                       Expanded(
@@ -323,8 +330,12 @@ class LaporanPage extends GetView<LaporanController> {
                           hintText: '0',
                           keyboardType: TextInputType.number,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Wajib diisi';
-                            if (int.tryParse(v.trim()) == null) return 'Harus berupa angka';
+                            if (v == null || v.trim().isEmpty) {
+                              return controller.isLaporanPertama.value ? null : 'Wajib diisi';
+                            }
+                            final n = int.tryParse(v.trim());
+                            if (n == null) return 'Harus berupa angka';
+                            if (n < 0) return 'Tidak boleh negatif';
                             return null;
                           },
                         ),
@@ -348,7 +359,9 @@ class LaporanPage extends GetView<LaporanController> {
                           keyboardType: TextInputType.number,
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) return 'Wajib diisi';
-                            if (double.tryParse(v.trim()) == null) return 'Harus berupa angka';
+                            final n = double.tryParse(v.trim());
+                            if (n == null) return 'Harus berupa angka';
+                            if (n <= 0) return 'Harus lebih dari 0';
                             return null;
                           },
                         ),

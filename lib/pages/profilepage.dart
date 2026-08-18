@@ -11,67 +11,100 @@ class ProfilPage extends GetView<ProfilController> {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: _buildAppBar(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-        child: Column(
-          children: [
-            const _AvatarWidget(),
-            const SizedBox(height: 20),
-            Obx(
-              () => Text(
-                controller.userName.value,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.black,
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Obx(
-              () => Text(
-                controller.userRole.value,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.primaryGreen,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Obx(
-              () => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                decoration: BoxDecoration(
-                  color: controller.statusBgColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  controller.statusLabel,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: controller.statusColor,
+      body: RefreshIndicator(
+        color: AppColors.primaryGreen,
+        onRefresh: controller.fetchProfile,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+          child: Column(
+            children: [
+              const _AvatarWidget(),
+              const SizedBox(height: 20),
+              Obx(
+                () => Text(
+                  controller.userName.value,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.black,
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 36),
-            _ProfileActionButton(
-              icon: Icons.help_outline,
-              label: 'Pusat Bantuan',
-              onTap: controller.onTapPusatBantuan,
-            ),
-            const SizedBox(height: 14),
-            _ProfileActionButton(
-              icon: Icons.logout,
-              label: 'Keluar',
-              onTap: controller.onTapKeluar,
-              isDanger: true,
-            ),
-          ],
+              const SizedBox(height: 6),
+              Obx(
+                () => Text(
+                  controller.userRole.value,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.primaryGreen,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Obx(
+                () => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: controller.statusBgColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    controller.statusLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: controller.statusColor,
+                    ),
+                  ),
+                ),
+              ),
+              Obx(() {
+                if (controller.isLoadingProfile.value) {
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                }
+                if (controller.hasProfileError.value) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: TextButton.icon(
+                      onPressed: controller.fetchProfile,
+                      icon: const Icon(Icons.refresh, size: 16, color: AppColors.red),
+                      label: const Text(
+                        'Gagal memuat data. Coba lagi',
+                        style: TextStyle(color: AppColors.red, fontSize: 12),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+              const SizedBox(height: 20),
+              const _DetailKaryawanSection(),
+              const SizedBox(height: 24),
+              _ProfileActionButton(
+                icon: Icons.help_outline,
+                label: 'Pusat Bantuan',
+                onTap: controller.onTapPusatBantuan,
+              ),
+              const SizedBox(height: 14),
+              _ProfileActionButton(
+                icon: Icons.logout,
+                label: 'Keluar',
+                onTap: controller.onTapKeluar,
+                isDanger: true,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -143,6 +176,71 @@ class _AvatarWidget extends GetView<ProfilController> {
         }),
       ),
     );
+  }
+}
+
+class _DetailKaryawanSection extends GetView<ProfilController> {
+  const _DetailKaryawanSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final rows = <MapEntry<String, String>>[
+        if ((controller.userEmail.value ?? '').isNotEmpty)
+          MapEntry('Email', controller.userEmail.value!),
+        if ((controller.userPhone.value ?? '').isNotEmpty)
+          MapEntry('No. HP', controller.userPhone.value!),
+        if (controller.joinDate.value != null) MapEntry('Bergabung', controller.joinDate.value!),
+        if (controller.tempatLahir.value != null)
+          MapEntry('Tempat Lahir', controller.tempatLahir.value!),
+        if (controller.tanggalLahir.value != null)
+          MapEntry('Tanggal Lahir', controller.tanggalLahir.value!),
+        if (controller.jenisKelamin.value != null)
+          MapEntry('Jenis Kelamin', controller.jenisKelamin.value!),
+      ];
+
+      if (rows.isEmpty) return const SizedBox.shrink();
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black.withOpacity(0.08)),
+        ),
+        child: Column(
+          children: rows.map((entry) {
+            final isLast = entry == rows.last;
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                border: isLast
+                    ? null
+                    : Border(bottom: BorderSide(color: Colors.black.withOpacity(0.06))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(entry.key, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                  Flexible(
+                    child: Text(
+                      entry.value,
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.black,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    });
   }
 }
 

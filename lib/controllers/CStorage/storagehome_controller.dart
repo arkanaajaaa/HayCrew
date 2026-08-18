@@ -8,6 +8,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:haycrew_app/routes/app_routes.dart';
 import 'package:haycrew_app/services/dbService.dart';
+import 'package:haycrew_app/services/gudang_service.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
 
 /// Model item stok storage — field-nya mengikuti persis kolom tabel
@@ -17,6 +18,7 @@ import 'package:haycrew_app/constants/api_constant.dart';
 class StokItemModel {
   final String id;
   final String jenis;
+  final String? gudang;
   final double beratPerItem;
   final int jumlahStok;
   final double estimasiTotalBerat;
@@ -27,6 +29,7 @@ class StokItemModel {
   const StokItemModel({
     required this.id,
     required this.jenis,
+    this.gudang,
     required this.beratPerItem,
     required this.jumlahStok,
     required this.estimasiTotalBerat,
@@ -39,6 +42,7 @@ class StokItemModel {
     return StokItemModel(
       id: json['id']?.toString() ?? '',
       jenis: json['jenis']?.toString() ?? '',
+      gudang: json['gudang']?.toString(),
       beratPerItem: _toDouble(json['berat_per_item']),
       jumlahStok: _toInt(json['jumlah_stok']),
       estimasiTotalBerat: _toDouble(json['estimasi_total_berat']),
@@ -66,8 +70,7 @@ class StorageHomeController extends GetxController {
   final _db = DBHelper();
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
-
-  Timer? _pollTimer;
+  String get token => _token;
 
   final userName = 'User'.obs;
   final userRole = 'Karyawan Storage'.obs;
@@ -79,8 +82,19 @@ class StorageHomeController extends GetxController {
   // "genuinely gak ada stok", biar gak nyamar jadi empty state biasa.
   final hasLoadError = false.obs;
 
-  final stokAyamGudang = 0.obs; 
-  final stokKeluar = 0.obs; 
+  final stokAyamGudang = 0.obs;
+  final stokKeluar = 0.obs;
+
+  // Filter lokasi gudang (Bogor/Depok/dst) — "Semua Gudang" berarti gabungan
+  // semua lokasi seperti sebelumnya. Data mentahnya (unfiltered) disimpan
+  // terpisah biar ganti filter nggak perlu fetch ulang ke server.
+  static const String semuaGudang = 'Semua Gudang';
+  final selectedGudang = semuaGudang.obs;
+  final gudangFilterOptions = <String>[semuaGudang].obs;
+
+  List<StokItemModel> _allStok = [];
+  List<Map<String, dynamic>> _rawTambahStokMasuk = [];
+  List<Map<String, dynamic>> _rawPesananKeluar = [];
 
   int get totalItem => stokList.length;
   int get itemAman => stokList.where((s) => s.status == 'aman').length;
@@ -92,18 +106,31 @@ class StorageHomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadArgs();
-    loadStok();
-    fetchStokAyamSummary();
-    _pollTimer = Timer.periodic(
-      ApiConstant.pollInterval,
-      (_) => refreshData(showLoading: false),
-    );
+    _initialLoad();
+    // Polling-nya dijalankan satu timer bersama di HomePageStorage (biar
+    // nyatu sama refresh CalendarWidget), bukan timer sendiri di sini —
+    // sama seperti pola di HomeController (kandang).
   }
 
-  @override
-  void onClose() {
-    _pollTimer?.cancel();
-    super.onClose();
+  Future<void> _initialLoad() async {
+    await loadStok();
+    // fetchStokAyamSummary butuh _allStok (buat resolve gudang tiap item
+    // pesanan lewat stok_id), jadi ditunggu setelah loadStok kelar biar
+    // urutannya konsisten baik pas online maupun lagi retry dari cache.
+    await fetchStokAyamSummary();
+    await _loadGudangFilterOptions();
+  }
+
+  Future<void> _loadGudangFilterOptions() async {
+    final names = await GudangService.fetchGudangNames(_token);
+    gudangFilterOptions.assignAll([semuaGudang, ...names]);
+  }
+
+  void setGudangFilter(String value) {
+    if (selectedGudang.value == value) return;
+    selectedGudang.value = value;
+    _applyStokFilter();
+    _applySummaryFilter();
   }
 
   void _loadArgs() {
@@ -131,17 +158,18 @@ class StorageHomeController extends GetxController {
 
     if (res.statusCode == 200) {
       final list = _extractList(res.body);
-      stokList.value = list.map((d) => StokItemModel.fromJson(d)).toList();
+      _allStok = list.map((d) => StokItemModel.fromJson(d)).toList();
+      _applyStokFilter();
       // simpan cache lokal biar bisa dipakai offline nanti
       await _db.replaceAllStok(list);
     } else {
       await _loadStokFromLocal();
-      if (stokList.isEmpty) hasLoadError.value = true;
+      if (_allStok.isEmpty) hasLoadError.value = true;
     }
   } catch (e) {
     debugPrint('Gagal ambil stok dari API, fallback lokal: $e');
     await _loadStokFromLocal();
-    if (stokList.isEmpty) hasLoadError.value = true;
+    if (_allStok.isEmpty) hasLoadError.value = true;
   } finally {
     isLoading.value = false;
     }
@@ -149,7 +177,35 @@ class StorageHomeController extends GetxController {
 
   Future<void> _loadStokFromLocal() async {
     final localData = await _db.getAllStok();
-    stokList.value = localData.map((d) => StokItemModel.fromJson(d)).toList();
+    _allStok = localData.map((d) => StokItemModel.fromJson(d)).toList();
+    _applyStokFilter();
+  }
+
+  void _applyStokFilter() {
+    final filtered = selectedGudang.value == semuaGudang
+        ? _allStok
+        : _allStok.where((s) => s.gudang == selectedGudang.value).toList();
+    stokList.value = _sortBySeverity(List.of(filtered));
+  }
+
+  /// Urutin stok yang paling butuh perhatian ke atas (tidak aman → waspada
+  /// → aman) — lebih berguna buat karyawan gudang yang butuh tahu "apa yang
+  /// harus ditangani sekarang" ketimbang urutan tanggal update mentah dari
+  /// server.
+  List<StokItemModel> _sortBySeverity(List<StokItemModel> list) {
+    int severity(String status) {
+      switch (status) {
+        case 'tidak aman':
+          return 0;
+        case 'waspada':
+          return 1;
+        default:
+          return 2;
+      }
+    }
+
+    list.sort((a, b) => severity(a.status).compareTo(severity(b.status)));
+    return list;
   }
 
   Future<void> refreshData({bool showLoading = true}) async {
@@ -160,9 +216,8 @@ class StorageHomeController extends GetxController {
   Future<void> fetchStokAyamSummary() async {
     try {
       final fromApi = await _fetchStokAyamFromApi();
-      if (fromApi != null) {
-        stokKeluar.value = fromApi['keluar']!;
-        stokAyamGudang.value = fromApi['gudang']!;
+      if (fromApi) {
+        _applySummaryFilter();
         return;
       }
     } catch (e) {
@@ -172,26 +227,42 @@ class StorageHomeController extends GetxController {
     await _fetchStokAyamFromLocal();
   }
 
-  Future<Map<String, int>?> _fetchStokAyamFromApi() async {
+  /// Ambil data mentah pemasukan (tambah stok) & pengeluaran (pesanan), lalu
+  /// simpan di `_rawTambahStokMasuk`/`_rawPesananKeluar` — dua-duanya sudah
+  /// dikasih tag `gudang` per baris biar bisa difilter ulang di
+  /// `_applySummaryFilter()` tanpa fetch API lagi tiap ganti filter lokasi.
+  Future<bool> _fetchStokAyamFromApi() async {
     final headers = {
       'Accept': 'application/json',
       'Authorization': 'Bearer $_token',
     };
 
-    final laporanRes = await http
+    // Stok Keluar diambil dari pesanan (yang beneran motong `jumlah_stok` di
+    // tabel stoks — lihat PesananController::potongStokUntukItem), bukan
+    // dari `jumlah_daging_jual` laporan gudang (angka self-report yang
+    // nggak nyambung ke stok yang beneran berkurang).
+    final pesananRes = await http
         .get(
-          Uri.parse('${ApiConstant.baseUrl}/api/laporan-gudang'),
+          Uri.parse('${ApiConstant.baseUrl}/api/pesanan'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 10));
 
-    if (laporanRes.statusCode != 200) return null;
-    final laporanList = _extractList(laporanRes.body);
+    if (pesananRes.statusCode != 200) return false;
+    final pesananList = _extractList(pesananRes.body);
 
-    final totalKeluar = laporanList.fold<int>(0, (sum, item) {
-      final v = item['jumlah_daging_jual'];
-      return sum + (v is int ? v : int.tryParse(v.toString()) ?? 0);
-    });
+    // Pesanan sendiri nggak punya field gudang langsung — tiap item-nya
+    // nunjuk ke stok_id, dan gudang-nya diambil dari situ (`_allStok` yang
+    // baru difetch di loadStok()).
+    final stokGudangById = {for (final s in _allStok) s.id: s.gudang};
+
+    _rawPesananKeluar = pesananList.expand((pesanan) {
+      final items = (pesanan['items'] as List?) ?? [];
+      return items.map((item) => {
+            'kuantitas': item['kuantitas'],
+            'gudang': stokGudangById[item['stok_id']?.toString()],
+          });
+    }).toList();
 
     final permintaanRes = await http
         .get(
@@ -200,18 +271,40 @@ class StorageHomeController extends GetxController {
         )
         .timeout(const Duration(seconds: 10));
 
-    if (permintaanRes.statusCode != 200) return null;
+    if (permintaanRes.statusCode != 200) return false;
     final permintaanList = _extractList(permintaanRes.body);
 
-    final totalMasuk = permintaanList
+    _rawTambahStokMasuk = permintaanList
         .where((item) => item['nama_permintaan'] == 'Tambah Stok Ayam')
+        .map((item) => {
+              'jumlah': item['jumlah'],
+              'gudang': item['tempat_pendistribusian'],
+            })
+        .toList();
+
+    return true;
+  }
+
+  void _applySummaryFilter() {
+    bool matchesFilter(dynamic gudang) =>
+        selectedGudang.value == semuaGudang || gudang == selectedGudang.value;
+
+    final totalMasuk = _rawTambahStokMasuk
+        .where((item) => matchesFilter(item['gudang']))
         .fold<int>(0, (sum, item) {
           final v = item['jumlah'];
           return sum + (v is int ? v : int.tryParse(v.toString()) ?? 0);
         });
 
-    final gudang = (totalMasuk - totalKeluar) < 0 ? 0 : (totalMasuk - totalKeluar);
-    return {'gudang': gudang, 'keluar': totalKeluar};
+    final totalKeluar = _rawPesananKeluar
+        .where((item) => matchesFilter(item['gudang']))
+        .fold<int>(0, (sum, item) {
+          final v = item['kuantitas'];
+          return sum + (v is int ? v : int.tryParse(v.toString()) ?? 0);
+        });
+
+    stokKeluar.value = totalKeluar;
+    stokAyamGudang.value = (totalMasuk - totalKeluar) < 0 ? 0 : (totalMasuk - totalKeluar);
   }
 
   List<Map<String, dynamic>> _extractList(String responseBody) {
@@ -225,22 +318,30 @@ class StorageHomeController extends GetxController {
     return [];
   }
 
-   Future<void> _fetchStokAyamFromLocal() async {
+  // Fallback offline — nggak ada cache lokal buat pesanan (pesanan dibuat
+  // dari sisi admin/web, bukan dari app ini), jadi kalau lagi offline
+  // "keluar" masih pakai perkiraan dari jumlah_daging_jual laporan gudang.
+  Future<void> _fetchStokAyamFromLocal() async {
     final tambahList = await _db.getAllTambahStok();
     final laporanList = await _db.getAllLaporanGudang();
 
-    final totalMasuk = tambahList.fold<int>(
-      0,
-      (sum, item) => sum + ((item['stok_masuk'] as int?) ?? 0),
-    );
-    final totalKeluar = laporanList.fold<int>(
-      0,
-      // jumlah_daging_jual kolomnya REAL (double) di SQLite, jadi harus
-      // di-cast ke num dulu baru dibulatkan ke int — cast langsung ke
-      // int? gagal karena tipe aslinya double, bukan int.
-      (sum, item) =>
-          sum + (((item['jumlah_daging_jual'] as num?)?.round()) ?? 0),
-    );
+    bool matchesFilter(dynamic gudang) =>
+        selectedGudang.value == semuaGudang || gudang == selectedGudang.value;
+
+    final totalMasuk = tambahList
+        .where((item) => matchesFilter(item['tempat_pendistribusian']))
+        .fold<int>(0, (sum, item) => sum + ((item['stok_masuk'] as int?) ?? 0));
+
+    final totalKeluar = laporanList
+        .where((item) => matchesFilter(item['tempat_pendistribusian']))
+        .fold<int>(
+          0,
+          // jumlah_daging_jual kolomnya REAL (double) di SQLite, jadi harus
+          // di-cast ke num dulu baru dibulatkan ke int — cast langsung ke
+          // int? gagal karena tipe aslinya double, bukan int.
+          (sum, item) =>
+              sum + (((item['jumlah_daging_jual'] as num?)?.round()) ?? 0),
+        );
 
     stokKeluar.value = totalKeluar;
     stokAyamGudang.value =
@@ -281,6 +382,10 @@ class StorageHomeController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if ((item.gudang ?? '').isNotEmpty) ...[
+              Text('Gudang : ${item.gudang}'),
+              const SizedBox(height: 8),
+            ],
             Text('Berat per Item : ${_formatBerat(item.beratPerItem)} kg'),
             const SizedBox(height: 8),
             Text('Jumlah Stok : ${item.jumlahStok} pcs'),

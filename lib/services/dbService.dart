@@ -20,7 +20,7 @@ class DBHelper {
 
     return await openDatabase(
       path,
-      version: 9, // naik dari 8 — device yang sempat pakai skema stok versi 8 sebelum kolom tanggal_update ditambahkan nggak ke-upgrade otomatis, jadi versi dinaikkan lagi buat maksa migrasi ulang
+      version: 10, // naik dari 9 — tambah kolom `gudang` ke cache lokal stok, biar filter per-lokasi tetap kepakai pas offline
       onCreate: (db, version) async {
         await _createLaporanKandangTable(db);
         await _createTambahStokTable(db);
@@ -56,6 +56,9 @@ class DBHelper {
           await _migrateStokTable(db);
         }
         if (oldVersion < 9) {
+          await _migrateStokTable(db);
+        }
+        if (oldVersion < 10) {
           await _migrateStokTable(db);
         }
       },
@@ -219,6 +222,7 @@ class DBHelper {
       CREATE TABLE IF NOT EXISTS stok(
         id TEXT PRIMARY KEY,
         jenis TEXT NOT NULL,
+        gudang TEXT,
         berat_per_item REAL NOT NULL DEFAULT 0,
         jumlah_stok INTEGER NOT NULL DEFAULT 0,
         estimasi_total_berat REAL NOT NULL DEFAULT 0,
@@ -376,6 +380,7 @@ class DBHelper {
         {
           'id': item['id']?.toString() ?? '',
           'jenis': item['jenis']?.toString() ?? '',
+          'gudang': item['gudang']?.toString(),
           'berat_per_item': item['berat_per_item'] is num
               ? (item['berat_per_item'] as num).toDouble()
               : double.tryParse(item['berat_per_item']?.toString() ?? '') ?? 0,

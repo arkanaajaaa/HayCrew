@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:haycrew_app/utils/error_utils.dart';
+import 'package:haycrew_app/utils/image_source_picker.dart';
 
 /// Satu baris entri stok daging: Jenis (Whole/Parting/dst), Bobot per unit
 /// (kg), dan Jumlah unit. Contoh tampilan: "3   Whole   0,7 kg".
@@ -107,8 +108,10 @@ class LaporanStokController extends GetxController {
   }
 
   void pickImage() async {
+    final source = await pickImageSource();
+    if (source == null) return;
     final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
+      source: source,
       imageQuality: 80,
     );
     if (picked != null) {

@@ -7,8 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
-import 'package:haycrew_app/routes/app_routes.dart';
 import 'package:haycrew_app/components/CSuccessSplash.dart';
+import 'package:haycrew_app/controllers/home_controller.dart';
 import 'package:haycrew_app/utils/error_utils.dart';
 import 'package:haycrew_app/utils/currency_input_formatter.dart';
 
@@ -32,19 +32,21 @@ class PermintaanController extends GetxController {
   String get nominalLabel =>
       jenisPermintaan.value == JenisPermintaan.dana ? 'Nominal*' : 'Jumlah*';
 
-  String get nominalHint => jenisPermintaan.value == JenisPermintaan.dana
-      ? 'Rp'
-      : 'Contoh: Sekam 10 karung';
+  // Field ini cuma nampung ANGKA jumlah barangnya — nama barangnya sendiri
+  // udah ditulis di field "Keperluan" di atas (mis. Keperluan: "Sekam",
+  // Jumlah: "10"). Backend juga cuma nerima field `jumlah` sebagai integer
+  // murni (lihat PermintaanController::store, validasi `jumlah` =>
+  // 'nullable|integer'), jadi hint & keyboard-nya harus konsisten angka.
+  String get nominalHint =>
+      jenisPermintaan.value == JenisPermintaan.dana ? 'Rp' : 'Contoh: 10';
 
   TextInputType get nominalKeyboardType =>
-      jenisPermintaan.value == JenisPermintaan.dana
-      ? const TextInputType.numberWithOptions(decimal: false)
-      : TextInputType.text;
+      const TextInputType.numberWithOptions(decimal: false);
 
   List<TextInputFormatter>? get nominalInputFormatters =>
       jenisPermintaan.value == JenisPermintaan.dana
       ? [FilteringTextInputFormatter.digitsOnly, RupiahInputFormatter()]
-      : null;
+      : [FilteringTextInputFormatter.digitsOnly];
 
   String get submitButtonText => isLoading.value ? 'Mengirim...' : 'Kirim';
   Color get submitButtonColor => isLoading.value
@@ -135,7 +137,12 @@ class PermintaanController extends GetxController {
 
         await CSuccessSplash.show(message: 'Permintaan berhasil\nterkirim');
 
-        Get.offAllNamed(AppRoutes.DASHBOARD_KANDANG);
+        // Balik ke dashboard yang udah ada di stack (bukan bikin ulang lewat
+        // offAllNamed) — biar HomeController nggak ke-recreate tanpa
+        // arguments, yang sebelumnya bikin nama user di "Halo, X" balik ke
+        // default begitu abis submit.
+        _refreshHomeIfExists();
+        Get.back();
 
         return;
       } else {
@@ -162,7 +169,18 @@ class PermintaanController extends GetxController {
         '${nominalLabel.replaceAll('*', '')} tidak boleh kosong.',
       );
     }
+    final nominal = int.tryParse(nominalController.text.trim().replaceAll('.', ''));
+    if (nominal == null || nominal <= 0) {
+      final label = jenisPermintaan.value == JenisPermintaan.dana ? 'Nominal' : 'Jumlah';
+      return _showError('$label harus lebih dari 0.');
+    }
     return true;
+  }
+
+  void _refreshHomeIfExists() {
+    if (Get.isRegistered<HomeController>()) {
+      Get.find<HomeController>().loadStatusPermintaan(showLoading: false);
+    }
   }
 
   bool _showError(String message) {

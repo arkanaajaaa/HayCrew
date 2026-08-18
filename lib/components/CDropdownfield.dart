@@ -28,8 +28,8 @@ class CDropdownField extends StatelessWidget {
       hint: Text(
         hintText,
         style: TextStyle(
-          color: hintColor ?? AppColors.primaryGreen,
-          fontSize: 16,
+          color: hintColor ?? Colors.grey[500],
+          fontSize: 15,
         ),
       ),
       icon: const Icon(
@@ -45,22 +45,24 @@ class CDropdownField extends StatelessWidget {
           )
           .toList(),
       onChanged: onChanged,
+      // Samain sama CTextField — putih bersih + border tipis krem, bukan
+      // fill khaki solid.
       decoration: InputDecoration(
         filled: true,
-        fillColor: fillColor ?? AppColors.textFieldBg,
+        fillColor: fillColor ?? AppColors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppColors.textFieldBg, width: 1.4),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppColors.textFieldBg, width: 1.4),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       ),
     );
   }

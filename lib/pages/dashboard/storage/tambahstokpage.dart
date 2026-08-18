@@ -63,7 +63,9 @@ class TambahStokPage extends GetView<TambahStokController> {
                       keyboardType: TextInputType.number,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Wajib diisi';
-                        if (int.tryParse(v.trim()) == null) return 'Harus berupa angka';
+                        final n = int.tryParse(v.trim());
+                        if (n == null) return 'Harus berupa angka';
+                        if (n <= 0) return 'Harus lebih dari 0';
                         return null;
                       },
                     ),

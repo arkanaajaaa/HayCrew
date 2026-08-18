@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
-import 'package:haycrew_app/routes/app_routes.dart';
+import 'package:haycrew_app/controllers/home_controller.dart';
 import 'package:haycrew_app/services/dbService.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:haycrew_app/components/CSuccessSplash.dart';
+import 'package:haycrew_app/utils/image_source_picker.dart';
 
 class LaporanController extends GetxController {
   final _storage = GetStorage();
@@ -102,7 +103,9 @@ class LaporanController extends GetxController {
   }
 
   void pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final source = await pickImageSource();
+    if (source == null) return;
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 80);
     if (picked != null) image.value = File(picked.path);
   }
 
@@ -122,9 +125,14 @@ class LaporanController extends GetxController {
           backgroundColor: Colors.red.shade100);
       return false;
     }
-    if (jumlahAyamMatiController.text.isEmpty ||
-        rataBobotController.text.isEmpty ||
-        selectedDate.value == null) {
+    // Laporan pertama siklus baru mulai — belum masuk akal nanya jumlah
+    // ayam mati, jadi field ini opsional (default 0) khusus di sini.
+    if (!isLaporanPertama.value && jumlahAyamMatiController.text.isEmpty) {
+      Get.snackbar('Error', 'Mohon lengkapi semua field wajib (*)',
+          backgroundColor: Colors.red.shade100);
+      return false;
+    }
+    if (rataBobotController.text.isEmpty || selectedDate.value == null) {
       Get.snackbar('Error', 'Mohon lengkapi semua field wajib (*)',
           backgroundColor: Colors.red.shade100);
       return false;
@@ -138,7 +146,9 @@ class LaporanController extends GetxController {
 
     final now = DateTime.now().toIso8601String();
     final localData = <String, dynamic>{
-      'jumlah_ayam_mati': int.parse(jumlahAyamMatiController.text),
+      'jumlah_ayam_mati': jumlahAyamMatiController.text.isEmpty
+          ? 0
+          : int.parse(jumlahAyamMatiController.text),
       'rata_rata_bobot': double.parse(rataBobotController.text),
       'catatan': catatanController.text,
       'foto': image.value?.path,
@@ -162,9 +172,8 @@ class LaporanController extends GetxController {
         await fetchLaporan();
         await checkSiklusAktif();
         await CSuccessSplash.show(message: 'Laporan berhasil\ntersimpan');
-        Future.delayed(const Duration(milliseconds: 200), () {
-          Get.offAllNamed(AppRoutes.DASHBOARD_KANDANG);
-        });
+        _refreshHomeIfExists();
+        Get.back();
       } else {
         Get.snackbar('Tersimpan Lokal', 'Laporan disimpan lokal, akan disync saat online.',
             backgroundColor: Colors.orange.shade100);
@@ -243,6 +252,12 @@ class LaporanController extends GetxController {
   }
 
   Future<void> fetchLaporan() async => laporanList.assignAll(await _db.getAllLaporan());
+
+  void _refreshHomeIfExists() {
+    if (Get.isRegistered<HomeController>()) {
+      Get.find<HomeController>().loadStatusPermintaan(showLoading: false);
+    }
+  }
 
   List<Map<String, dynamic>> get pendingLaporan =>
       laporanList.where((l) => l['is_synced'] == 0).toList();

@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:haycrew_app/utils/error_utils.dart';
+import 'package:haycrew_app/utils/image_source_picker.dart';
 
 class TambahStokController extends GetxController {
   final _storage = GetStorage();
@@ -75,8 +76,11 @@ class TambahStokController extends GetxController {
 
     try {
       _isPickingImage = true;
+      final source = await pickImageSource();
+      if (source == null) return;
+
       final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
+        source: source,
         imageQuality: 80,
       );
 

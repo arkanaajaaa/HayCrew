@@ -9,11 +9,15 @@ class AppColors {
   
   // Background Colors
   static const Color backgroundColor = Color(0xFFF5F5F0);
-  static const Color calendarBackground = Color(0xFFE8E8D8);
-  
+  static const Color calendarBackground = Color(0xFFE8E7E3);
+
   // Text Colors
   static const Color textDark = Color(0xFF1F5A3C);
-  static const Color textFieldBg = Color(0xFFEDEBD9);
+  // Netral putih tulang agak abu — sebelumnya khaki (0xFFEDEBD9) yang
+  // keliatan kehijauan di card/border/chip. Ini dipakai luas sebagai token
+  // "neutral card" (fill/border) di Calendar, Summary Card, Riwayat Card,
+  // dan filter chip, jadi diganti di satu tempat biar konsisten semua.
+  static const Color textFieldBg = Color(0xFFE9E7E4);
   
   // Additional Colors
   static const Color white = Colors.white;

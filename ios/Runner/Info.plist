@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>HayCrew butuh akses kamera buat ambil foto bukti laporan/stok.</string>
 </dict>
 </plist>

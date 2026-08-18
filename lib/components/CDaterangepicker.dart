@@ -27,8 +27,9 @@ class CDateRangePicker extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
-          color: fillColor ?? AppColors.textFieldBg,
+          color: fillColor ?? AppColors.white,
           borderRadius: BorderRadius.circular(borderRadius),
+          border: Border.all(color: AppColors.textFieldBg, width: 1.4),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

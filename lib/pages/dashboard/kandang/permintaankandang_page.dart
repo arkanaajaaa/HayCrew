@@ -172,7 +172,7 @@ class _KeperluanField extends GetView<PermintaanController> {
   Widget build(BuildContext context) {
     return CTextField(
       controller: controller.keperluanController,
-      hintText: '',
+      hintText: 'Contoh: Sekam',
       validator: (v) => (v == null || v.trim().isEmpty) ? 'Keperluan wajib diisi' : null,
     );
   }
@@ -200,9 +200,13 @@ class _NominalField extends GetView<PermintaanController> {
           hintText:        controller.nominalHint,
           keyboardType:    controller.nominalKeyboardType,
           inputFormatters: controller.nominalInputFormatters,
-          validator: (v) => (v == null || v.trim().isEmpty)
-              ? '${controller.nominalLabel.replaceAll('*', '')} wajib diisi'
-              : null,
+          validator: (v) {
+            final label = controller.nominalLabel.replaceAll('*', '');
+            if (v == null || v.trim().isEmpty) return '$label wajib diisi';
+            final n = int.tryParse(v.trim().replaceAll('.', ''));
+            if (n == null || n <= 0) return '$label harus lebih dari 0';
+            return null;
+          },
         ),
       ),
     );

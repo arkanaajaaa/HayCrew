@@ -103,7 +103,8 @@ class CStokItemCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${item.jumlahStok} pcs • ${_formatBerat(item.estimasiTotalBerat)} kg',
+                    '${item.jumlahStok} pcs • ${_formatBerat(item.estimasiTotalBerat)} kg'
+                    '${(item.gudang ?? '').isNotEmpty ? ' • ${item.gudang}' : ''}',
                     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   ),
                 ],

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:haycrew_app/components/CAppbar.dart';
 import 'package:haycrew_app/components/Cloadingorempty.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
-import 'package:haycrew_app/controllers/home_controller.dart';
-import 'package:haycrew_app/models/status_permintaan_model.dart';
-
+import 'package:haycrew_app/controllers/CKandang/riwayat_kandang_controller.dart';
+import 'package:haycrew_app/models/riwayat_item_model.dart';
 
 class RiwayatKandangPage extends StatefulWidget {
   const RiwayatKandangPage({Key? key}) : super(key: key);
@@ -15,7 +15,7 @@ class RiwayatKandangPage extends StatefulWidget {
 }
 
 class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
-  final HomeController controller = Get.find<HomeController>();
+  final RiwayatKandangController controller = Get.find<RiwayatKandangController>();
   final _searchController = TextEditingController();
   String _query = '';
 
@@ -25,13 +25,13 @@ class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
     super.dispose();
   }
 
-  List<StatusPermintaanModel> _filtered(List<StatusPermintaanModel> source) {
+  List<RiwayatItem> _filtered(List<RiwayatItem> source) {
     if (_query.trim().isEmpty) return source;
     final q = _query.trim().toLowerCase();
     return source
         .where((s) =>
             s.title.toLowerCase().contains(q) ||
-            (s.description ?? '').toLowerCase().contains(q))
+            s.subtitle.toLowerCase().contains(q))
         .toList();
   }
 
@@ -39,7 +39,7 @@ class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      appBar: const CAppBar(title: 'Riwayat Kegiatan'),
+      appBar: const CAppBar(title: 'Riwayat Kegiatan', showBackButton: false),
       body: Column(
         children: [
           Padding(
@@ -48,13 +48,13 @@ class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
               controller: _searchController,
               onChanged: (val) => setState(() => _query = val),
               decoration: InputDecoration(
-                hintText: 'Cari permintaan...',
-                prefixIcon: const Icon(Icons.search, size: 20),
+                hintText: 'Cari aktivitas...',
+                prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
                 isDense: true,
                 filled: true,
-                fillColor: AppColors.white,
+                fillColor: AppColors.textFieldBg.withOpacity(0.6),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -63,9 +63,9 @@ class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
           Expanded(
             child: RefreshIndicator(
               color: AppColors.primaryGreen,
-              onRefresh: controller.refreshData,
+              onRefresh: controller.fetchRiwayat,
               child: Obx(() {
-                if (controller.isLoading.value && controller.statusList.isEmpty) {
+                if (controller.isLoading.value && controller.items.isEmpty) {
                   return ListView(
                     children: const [
                       SizedBox(height: 120),
@@ -74,7 +74,20 @@ class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
                   );
                 }
 
-                final items = _filtered(controller.statusList);
+                if (controller.hasError.value) {
+                  return ListView(
+                    children: [
+                      const SizedBox(height: 80),
+                      CLoadingOrEmpty.error(
+                        message: 'Gagal memuat riwayat',
+                        errorDetail: 'Cek koneksi internet kamu lalu coba lagi.',
+                        onRetry: () => controller.fetchRiwayat(),
+                      ),
+                    ],
+                  );
+                }
+
+                final items = _filtered(controller.items);
 
                 if (items.isEmpty) {
                   return ListView(
@@ -82,7 +95,7 @@ class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
                       const SizedBox(height: 80),
                       CLoadingOrEmpty.empty(
                         message: _query.trim().isEmpty
-                            ? 'Belum ada riwayat permintaan'
+                            ? 'Belum ada riwayat aktivitas'
                             : 'Gak ada hasil buat "$_query"',
                         icon: Icons.history,
                       ),
@@ -93,13 +106,7 @@ class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final status = items[index];
-                    return _RiwayatKandangCard(
-                      status: status,
-                      onTap: () => controller.navigateToDetail(status),
-                    );
-                  },
+                  itemBuilder: (context, index) => _RiwayatCard(item: items[index]),
                 );
               }),
             ),
@@ -110,29 +117,43 @@ class _RiwayatKandangPageState extends State<RiwayatKandangPage> {
   }
 }
 
-class _RiwayatKandangCard extends StatelessWidget {
-  final StatusPermintaanModel status;
-  final VoidCallback onTap;
+class _RiwayatCard extends StatelessWidget {
+  final RiwayatItem item;
 
-  const _RiwayatKandangCard({required this.status, required this.onTap});
+  const _RiwayatCard({required this.item});
+
+  IconData get _icon {
+    switch (item.type) {
+      case RiwayatType.permintaan:
+        return Icons.request_quote_outlined;
+      case RiwayatType.laporanKandang:
+        return Icons.assignment_outlined;
+      case RiwayatType.laporanGudang:
+        return Icons.inventory_2_outlined;
+      case RiwayatType.tambahStok:
+        return Icons.add_box_outlined;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final color = _statusColor(status.status);
-
+    // Card netral senada sama CalendarWidget/CStokItemCard/StatusCardWidget
+    // (tint krem tipis + border + shadow halus), dengan ikon jenis aktivitas
+    // dikasih badge bundar kecil — bukan lagi strip warna tebal di kiri yang
+    // beda sendiri dari card-card lain di aplikasi.
     return InkWell(
-      onTap: onTap,
+      onTap: () => _showDetail(context),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: AppColors.textFieldBg.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border(left: BorderSide(color: color, width: 5)),
+          border: Border.all(color: AppColors.textFieldBg.withOpacity(0.25)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -141,67 +162,71 @@ class _RiwayatKandangCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Tanggal
             SizedBox(
-              width: 44,
+              width: 40,
               child: Column(
                 children: [
                   Text(
-                    status.day.toString(),
+                    DateFormat('dd').format(item.date),
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.black,
+                      color: AppColors.textDark,
                     ),
                   ),
                   Text(
-                    status.month,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    DateFormat('MMM', 'id_ID').format(item.date),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-
+            Container(
+              margin: const EdgeInsets.only(left: 10, right: 12),
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(_icon, size: 17, color: Colors.grey[600]),
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    status.title,
+                    item.title,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: AppColors.black,
                     ),
                   ),
-                  if ((status.description ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      status.description!,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 4),
+                  Text(
+                    item.subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: item.statusColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
+                    child: Text(
+                      item.statusLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: item.statusColor,
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-            ),
-            const SizedBox(width: 8),
-
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _statusLabel(status.status),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
               ),
             ),
           ],
@@ -210,25 +235,24 @@ class _RiwayatKandangCard extends StatelessWidget {
     );
   }
 
-  Color _statusColor(StatusType type) {
-    switch (type) {
-      case StatusType.accepted:
-        return AppColors.lightGreen;
-      case StatusType.pending:
-        return AppColors.orange;
-      case StatusType.rejected:
-        return AppColors.red;
-    }
-  }
-
-  String _statusLabel(StatusType type) {
-    switch (type) {
-      case StatusType.accepted:
-        return 'Diterima';
-      case StatusType.pending:
-        return 'Pending';
-      case StatusType.rejected:
-        return 'Ditolak';
-    }
+  void _showDetail(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Text(item.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tanggal: ${DateFormat('dd MMM yyyy', 'id_ID').format(item.date)}'),
+            const SizedBox(height: 8),
+            Text('Status: ${item.statusLabel}'),
+            const SizedBox(height: 8),
+            Text(item.subtitle),
+          ],
+        ),
+        actions: [TextButton(onPressed: Get.back, child: const Text('Tutup'))],
+      ),
+    );
   }
 }

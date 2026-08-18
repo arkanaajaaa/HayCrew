@@ -58,9 +58,27 @@ class MyApp extends StatelessWidget {
       
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
-      
+
       defaultTransition: Transition.cupertino,
       transitionDuration: const Duration(milliseconds: 300),
+
+      // Sebagian HP (terutama yang setelan "Ukuran font"/"Bold text" di
+      // Aksesibilitas-nya lebih besar dari default, umum di ROM Xiaomi/Oppo/
+      // Vivo) bikin teks jadi kepotong/ngestretch di container ukuran tetap
+      // (chip, tombol, dsb) karena textScaleFactor sistem ikut membesar.
+      // Di-clamp di sini biar tampilan huruf konsisten di semua HP, nggak
+      // ketinggian/terpotong walau setelan font sistemnya beda-beda.
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        final clampedScale = mq.textScaler.clamp(
+          minScaleFactor: 0.9,
+          maxScaleFactor: 1.15,
+        );
+        return MediaQuery(
+          data: mq.copyWith(textScaler: clampedScale),
+          child: child!,
+        );
+      },
     );
   }
 }

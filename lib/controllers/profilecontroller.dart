@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart'; 
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
+import 'package:haycrew_app/controllers/navbar_controller.dart';
 import 'package:haycrew_app/routes/app_routes.dart';
 
 class ProfilMenuItem {
@@ -35,14 +38,26 @@ class ProfilController extends GetxController {
   static final _inactiveBgColor = AppColors.red.withOpacity(0.1);
   static final _logoutBgColor   = AppColors.red.withOpacity(0.1);
 
-  // ─── User Data — mandiri, tidak bergantung HomeController ─────────────────
+  // ─── User Data — prefill instan dari args login, lalu ditimpa data asli
+  // dari /api/profile begitu selesai fetch (lihat fetchProfile()) ───────────
   final userName = 'User'.obs;
   final userRole = 'Karyawan'.obs;
   final userPhotoUrl = Rxn<String>();
+  final userEmail = Rxn<String>();
+  final userPhone = Rxn<String>();
 
-  final joinDate = 'Karyawan sejak 12-02-2023'.obs;
+  // Detail karyawan (opsional — null kalau user ini belum punya data
+  // karyawan tersimpan, misalnya akun admin)
+  final tempatLahir = Rxn<String>();
+  final tanggalLahir = Rxn<String>();
+  final jenisKelamin = Rxn<String>();
+
+  final joinDate = Rxn<String>();
   final isActive = true.obs;
   final isLoggingOut = false.obs;
+
+  final isLoadingProfile = false.obs;
+  final hasProfileError = false.obs;
 
   late final List<ProfilMenuItem> menuItems;
 
@@ -51,6 +66,7 @@ class ProfilController extends GetxController {
     super.onInit();
     _loadArgs();
     menuItems = _buildMenuItems();
+    fetchProfile();
   }
 
   void _loadArgs() {
@@ -59,6 +75,48 @@ class ProfilController extends GetxController {
       userName.value = args['userName'] ?? 'User';
       userRole.value = args['userRole'] ?? 'Karyawan';
       userPhotoUrl.value = args['userPhotoUrl'] as String?;
+    }
+  }
+
+  /// Fetch data profil asli dari server — dipanggil sendiri di sini, nggak
+  /// nunggu/nebeng arguments navigasi (yang kadang nggak ke-pass di
+  /// beberapa alur redirect), jadi profil selalu bisa reload dirinya
+  /// sendiri kapanpun halaman ini dibuka.
+  Future<void> fetchProfile() async {
+    isLoadingProfile.value = true;
+    hasProfileError.value = false;
+    try {
+      final res = await http.get(
+        Uri.parse('${ApiConstant.baseUrl}/api/profile'),
+        headers: {'Accept': 'application/json', 'Authorization': 'Bearer $_token'},
+      ).timeout(const Duration(seconds: 15));
+
+      if (res.statusCode == 200) {
+        final user = jsonDecode(res.body)['user'] as Map<String, dynamic>;
+        userName.value = user['name'] ?? userName.value;
+        userEmail.value = user['email'] as String?;
+        userPhotoUrl.value = user['foto_url'] as String?;
+        userPhone.value = user['no_hp'] as String?;
+
+        final karyawan = user['karyawan'] as Map<String, dynamic>?;
+        if (karyawan != null) {
+          isActive.value = karyawan['status'] == 'aktif';
+          tempatLahir.value = karyawan['tempat_lahir'] as String?;
+          jenisKelamin.value = karyawan['jenis_kelamin'] == 'L' ? 'Laki-laki' : 'Perempuan';
+          final lahir = DateTime.tryParse(karyawan['tanggal_lahir']?.toString() ?? '');
+          tanggalLahir.value = lahir != null ? DateFormat('dd MMM yyyy', 'id_ID').format(lahir) : null;
+          final bergabung = DateTime.tryParse(karyawan['tanggal_bergabung']?.toString() ?? '');
+          joinDate.value = bergabung != null
+              ? 'Karyawan sejak ${DateFormat('dd MMM yyyy', 'id_ID').format(bergabung)}'
+              : null;
+        }
+      } else {
+        hasProfileError.value = true;
+      }
+    } catch (_) {
+      hasProfileError.value = true;
+    } finally {
+      isLoadingProfile.value = false;
     }
   }
 
@@ -88,13 +146,12 @@ class ProfilController extends GetxController {
 
 
   void onTapRiwayatAktivitas() {
-    final role = userRole.value.toLowerCase();
-    if (role.contains('kandang')) {
-      Get.toNamed(AppRoutes.RIWAYAT_KANDANG);
-    } else if (role.contains('gudang') || role.contains('storage')) {
-      Get.toNamed(AppRoutes.RIWAYAT_STORAGE);
-    } else {
-      _showComingSoon('Riwayat Aktivitas');
+    // Riwayat itu tab index 1 di kedua shell (kandang & gudang) — pindah tab
+    // di shell yang sama, bukan push route baru, biar nggak ada instance
+    // duplikat dan tombol back nggak ambigu (riwayat cuma pernah dibuka
+    // sebagai tab, nggak pernah sebagai halaman ter-push).
+    if (Get.isRegistered<NavbarController>()) {
+      Get.find<NavbarController>().changeTab(1);
     }
   }
 
@@ -164,17 +221,6 @@ class ProfilController extends GetxController {
     Get.offAllNamed(AppRoutes.LOGIN);
 
     isLoggingOut.value = false;
-  }
-
-  void _showComingSoon(String feature) {
-    Get.snackbar(
-      'Info', 'Fitur $feature akan segera tersedia',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.blue[100],
-      colorText: Colors.blue[900],
-      margin: const EdgeInsets.all(15),
-      duration: const Duration(seconds: 2),
-    );
   }
 
   void _showErrorSnackbar(String message) {
