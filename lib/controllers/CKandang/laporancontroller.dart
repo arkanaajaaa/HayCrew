@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:haycrew_app/components/CSuccessSplash.dart';
 import 'package:haycrew_app/utils/image_source_picker.dart';
+import 'package:flutter/services.dart';
 
 class LaporanController extends GetxController {
   final _storage = GetStorage();
@@ -43,6 +44,28 @@ class LaporanController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    // Listener: ubah titik (.) menjadi koma (,) saat user mengetik
+    // supaya input langsung tampil dengan format lokal (0,5).
+    rataBobotController.addListener(() {
+      final text = rataBobotController.text;
+      if (text.contains('.')) {
+        final newText = text.replaceAll('.', ',');
+        final baseOffset = rataBobotController.selection.baseOffset;
+        final extentOffset = rataBobotController.selection.extentOffset;
+        // Pastikan selection tetap valid setelah perubahan (panjang tidak berubah
+        // karena '.' diganti dengan ',' sehingga offset tetap aman).
+        final newSelection = TextSelection(
+          baseOffset: baseOffset,
+          extentOffset: extentOffset,
+        );
+        rataBobotController.value = TextEditingValue(
+          text: newText,
+          selection: newSelection,
+        );
+      }
+    });
+
     fetchLaporan();
     checkSiklusAktif();
   }
@@ -149,7 +172,8 @@ class LaporanController extends GetxController {
       'jumlah_ayam_mati': jumlahAyamMatiController.text.isEmpty
           ? 0
           : int.parse(jumlahAyamMatiController.text),
-      'rata_rata_bobot': double.parse(rataBobotController.text),
+      // parse angka dengan mengganti koma -> titik agar double.parse bisa membaca
+      'rata_rata_bobot': double.parse(rataBobotController.text.replaceAll(',', '.')),
       'catatan': catatanController.text,
       'foto': image.value?.path,
       'tanggal': DateFormat('yyyy-MM-dd').format(selectedDate.value!),

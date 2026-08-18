@@ -81,6 +81,8 @@ class RiwayatKandangController extends GetxController {
         subtitle: nominal,
         statusLabel: _permintaanStatusLabel(status),
         statusColor: _permintaanStatusColor(status),
+        // ambil alasan penolakan dari payload jika tersedia
+        alasan: item['alasan_tolak']?.toString(),
       );
     }).toList();
   }

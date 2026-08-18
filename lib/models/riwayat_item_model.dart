@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 enum RiwayatType { permintaan, laporanKandang, laporanGudang, tambahStok }
 
-/// Satu baris aktivitas di halaman Riwayat — hasil gabungan dari beberapa
-/// jenis data (permintaan, laporan, dst) yang dipersonalisasi per user oleh
-/// controller masing-masing (data yang dipakai di sini sudah difilter milik
-/// user yang login, bukan seluruh tim).
+
 class RiwayatItem {
   final String id;
   final RiwayatType type;
@@ -15,6 +12,7 @@ class RiwayatItem {
   final String statusLabel;
   final Color statusColor;
   final bool isPending;
+  final String? alasan; // optional alasan penolakan / catatan tambahan
 
   const RiwayatItem({
     required this.id,
@@ -25,5 +23,6 @@ class RiwayatItem {
     required this.statusLabel,
     required this.statusColor,
     this.isPending = false,
+    this.alasan,
   });
 }
