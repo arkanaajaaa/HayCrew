@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -8,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/components/CSuccessSplash.dart';
@@ -22,6 +24,7 @@ class PermintaanController extends GetxController {
   static const String baseUrl = ApiConstant.baseUrl;
 
   final _storage = GetStorage();
+
   String get _token => _storage.read('token') ?? '';
 
   final keperluanController = TextEditingController();
@@ -33,65 +36,56 @@ class PermintaanController extends GetxController {
   final isLoading = false.obs;
 
   final Rx<File?> image = Rx<File?>(null);
+
   bool _isPickingImage = false;
 
-  String get nominalLabel =>
-      jenisPermintaan.value == JenisPermintaan.dana ? 'Nominal*' : 'Jumlah*';
+  String get nominalLabel {
+    return jenisPermintaan.value == JenisPermintaan.dana
+        ? 'Nominal*'
+        : 'Jumlah*';
+  }
 
-  // Field ini cuma nampung ANGKA jumlah barangnya — nama barangnya sendiri
-  // udah ditulis di field "Keperluan" di atas (mis. Keperluan: "Sekam",
-  // Jumlah: "10"). Backend juga cuma nerima field `jumlah` sebagai integer
-  // murni (lihat PermintaanController::store, validasi `jumlah` =>
-  // 'nullable|integer'), jadi hint & keyboard-nya harus konsisten angka.
-  String get nominalHint =>
-      jenisPermintaan.value == JenisPermintaan.dana ? 'Rp' : 'Contoh: 10';
+  String get nominalHint {
+    return jenisPermintaan.value == JenisPermintaan.dana
+        ? 'Rp'
+        : 'Contoh: 10';
+  }
 
-  TextInputType get nominalKeyboardType =>
-      const TextInputType.numberWithOptions(decimal: false);
-
-  List<TextInputFormatter>? get nominalInputFormatters =>
-      jenisPermintaan.value == JenisPermintaan.dana
-      ? [FilteringTextInputFormatter.digitsOnly, RupiahInputFormatter()]
-      : [FilteringTextInputFormatter.digitsOnly];
-
-  String get submitButtonText => isLoading.value ? 'Mengirim...' : 'Kirim';
-  Color get submitButtonColor => isLoading.value
-      ? AppColors.primaryGreen.withOpacity(0.6)
-      : AppColors.primaryGreen;
-
-  bool get isBarangSelected => jenisPermintaan.value == JenisPermintaan.barang;
-  bool get isDanaSelected => jenisPermintaan.value == JenisPermintaan.dana;
-
-  void onTapDatePicker() async {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final initial = (selectedDate.value != null && !selectedDate.value!.isAfter(today))
-        ? selectedDate.value!
-        : today;
-
-    final picked = await showDatePicker(
-      context: Get.context!,
-      initialDate: initial,
-      firstDate: DateTime(2020),
-      lastDate: today,
-      locale: const Locale('id', 'ID'),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppColors.primaryGreen,
-            onPrimary: AppColors.white,
-            surface: AppColors.white,
-            onSurface: AppColors.black,
-          ),
-        ),
-        child: child!,
-      ),
+  TextInputType get nominalKeyboardType {
+    return const TextInputType.numberWithOptions(
+      decimal: false,
     );
+  }
 
-    if (picked != null) {
-      selectedDate.value = picked;
-      formattedDate.value = DateFormat('dd MMM yyyy', 'id_ID').format(picked);
+  List<TextInputFormatter>? get nominalInputFormatters {
+    if (jenisPermintaan.value == JenisPermintaan.dana) {
+      return [
+        FilteringTextInputFormatter.digitsOnly,
+        RupiahInputFormatter(),
+      ];
     }
+
+    return [
+      FilteringTextInputFormatter.digitsOnly,
+    ];
+  }
+
+  String get submitButtonText {
+    return isLoading.value ? 'Mengirim...' : 'Kirim';
+  }
+
+  Color get submitButtonColor {
+    return isLoading.value
+        ? AppColors.primaryGreen.withOpacity(0.6)
+        : AppColors.primaryGreen;
+  }
+
+  bool get isBarangSelected {
+    return jenisPermintaan.value == JenisPermintaan.barang;
+  }
+
+  bool get isDanaSelected {
+    return jenisPermintaan.value == JenisPermintaan.dana;
   }
 
   void onSelectJenis(JenisPermintaan jenis) {
@@ -99,13 +93,60 @@ class PermintaanController extends GetxController {
     nominalController.clear();
   }
 
+  void onTapDatePicker() async {
+    final now = DateTime.now();
+
+    final today = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    );
+
+    final initial =
+        selectedDate.value != null &&
+                !selectedDate.value!.isAfter(today)
+            ? selectedDate.value!
+            : today;
+
+    final picked = await showDatePicker(
+      context: Get.context!,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: today,
+      locale: const Locale('id', 'ID'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryGreen,
+              onPrimary: AppColors.white,
+              surface: AppColors.white,
+              onSurface: AppColors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      selectedDate.value = picked;
+
+      formattedDate.value = DateFormat(
+        'dd MMM yyyy',
+        'id_ID',
+      ).format(picked);
+    }
+  }
+
   void pickImage() async {
-    // Mencegah eksekusi berulang jika galeri/kamera sedang terbuka
     if (_isPickingImage) return;
 
     try {
       _isPickingImage = true;
+
       final source = await pickImageSource();
+
       if (source == null) return;
 
       final picked = await ImagePicker().pickImage(
@@ -133,22 +174,46 @@ class PermintaanController extends GetxController {
           ? 'dana'
           : 'barang';
 
-      final uri = Uri.parse('$baseUrl/api/permintaan');
-      final request = http.MultipartRequest('POST', uri);
+      final uri = Uri.parse(
+        '$baseUrl/api/permintaan',
+      );
+
+      final request = http.MultipartRequest(
+        'POST',
+        uri,
+      );
 
       request.headers.addAll({
         'Accept': 'application/json',
         'Authorization': 'Bearer $_token',
       });
 
-      request.fields['nama_permintaan'] = keperluanController.text.trim();
+      request.fields['nama_permintaan'] =
+          keperluanController.text.trim();
+
       request.fields['tipe'] = tipe;
-      request.fields['tanggal'] = DateFormat('yyyy-MM-dd').format(selectedDate.value!);
+
+      request.fields['tanggal'] =
+          DateFormat('yyyy-MM-dd').format(
+        selectedDate.value!,
+      );
 
       if (tipe == 'dana') {
-        request.fields['harga'] = nominalController.text.trim().replaceAll('.', '');
+        final harga = nominalController.text
+            .trim()
+            .replaceAll('.', '');
+
+        request.fields['harga'] = harga;
+
+        debugPrint('Harga tampil: ${nominalController.text}');
+        debugPrint('Harga dikirim: $harga');
       } else {
-        request.fields['jumlah'] = nominalController.text.trim();
+        request.fields['jumlah'] =
+            nominalController.text.trim();
+
+        debugPrint(
+          'Jumlah barang: ${nominalController.text.trim()}',
+        );
       }
 
       if (image.value != null) {
@@ -156,7 +221,9 @@ class PermintaanController extends GetxController {
           await http.MultipartFile.fromPath(
             'foto',
             image.value!.path,
-            filename: path.basename(image.value!.path),
+            filename: path.basename(
+              image.value!.path,
+            ),
           ),
         );
       }
@@ -167,8 +234,11 @@ class PermintaanController extends GetxController {
       final streamedResponse = await request.send().timeout(
         const Duration(seconds: 15),
       );
+
       final statusCode = streamedResponse.statusCode;
-      final bodyStr = await streamedResponse.stream.bytesToString();
+
+      final bodyStr =
+          await streamedResponse.stream.bytesToString();
 
       debugPrint('Status: $statusCode');
       debugPrint('Response: $bodyStr');
@@ -176,24 +246,37 @@ class PermintaanController extends GetxController {
       if (statusCode == 200 || statusCode == 201) {
         _resetForm();
 
-        await CSuccessSplash.show(message: 'Permintaan berhasil\nterkirim');
+        await CSuccessSplash.show(
+          message: 'Permintaan berhasil\nterkirim',
+        );
 
-        // Balik ke dashboard yang udah ada di stack (bukan bikin ulang lewat
-        // offAllNamed) — biar HomeController nggak ke-recreate tanpa
-        // arguments, yang sebelumnya bikin nama user di "Halo, X" balik ke
-        // default begitu abis submit.
         _refreshHomeIfExists();
+
         Get.back();
 
         return;
       } else {
-        final responseBody = bodyStr.isNotEmpty ? jsonDecode(bodyStr) : null;
-        _showError(responseBody?['message'] ?? 'Gagal mengirim permintaan.');
+        dynamic responseBody;
+
+        try {
+          responseBody =
+              bodyStr.isNotEmpty ? jsonDecode(bodyStr) : null;
+        } catch (_) {
+          responseBody = null;
+        }
+
+        _showError(
+          responseBody?['message'] ??
+              'Gagal mengirim permintaan.',
+        );
       }
     } catch (e, stack) {
       debugPrint('ERROR: $e');
       debugPrint('STACK: $stack');
-      _showError(friendlyErrorMessage(e));
+
+      _showError(
+        friendlyErrorMessage(e),
+      );
     } finally {
       isLoading.value = false;
     }
@@ -201,27 +284,49 @@ class PermintaanController extends GetxController {
 
   bool _validate() {
     if (selectedDate.value == null) {
-      return _showError('Mohon pilih tanggal terlebih dahulu.');
+      return _showError(
+        'Mohon pilih tanggal terlebih dahulu.',
+      );
     }
+
     if (keperluanController.text.trim().isEmpty) {
-      return _showError('Keperluan tidak boleh kosong.');
+      return _showError(
+        'Keperluan tidak boleh kosong.',
+      );
     }
+
     if (nominalController.text.trim().isEmpty) {
       return _showError(
         '${nominalLabel.replaceAll('*', '')} tidak boleh kosong.',
       );
     }
-    final nominal = int.tryParse(nominalController.text.trim().replaceAll('.', ''));
+
+    final rawValue = nominalController.text
+        .trim()
+        .replaceAll('.', '');
+
+    final nominal = int.tryParse(rawValue);
+
     if (nominal == null || nominal <= 0) {
-      final label = jenisPermintaan.value == JenisPermintaan.dana ? 'Nominal' : 'Jumlah';
-      return _showError('$label harus lebih dari 0.');
+      final label =
+          jenisPermintaan.value == JenisPermintaan.dana
+              ? 'Nominal'
+              : 'Jumlah';
+
+      return _showError(
+        '$label harus lebih dari 0.',
+      );
     }
+
     return true;
   }
 
   void _refreshHomeIfExists() {
     if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().loadStatusPermintaan(showLoading: false);
+      Get.find<HomeController>()
+          .loadStatusPermintaan(
+        showLoading: false,
+      );
     }
   }
 
@@ -234,6 +339,7 @@ class PermintaanController extends GetxController {
       snackPosition: SnackPosition.TOP,
       margin: const EdgeInsets.all(12),
     );
+
     return false;
   }
 
