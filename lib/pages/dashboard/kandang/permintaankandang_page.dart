@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:haycrew_app/components/CButton.dart';
 import 'package:haycrew_app/components/CTextfield.dart';
-import 'package:haycrew_app/components/CAppBar.dart';           
-import 'package:haycrew_app/components/CDateRangePicker.dart';  
+import 'package:haycrew_app/components/CUploadimagepage.dart';
+import 'package:haycrew_app/components/CAppBar.dart';
+import 'package:haycrew_app/components/CDateRangePicker.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CKandang/permintaancontroller.dart';
 
@@ -52,9 +53,9 @@ class PermintaanKandangPage extends GetView<PermintaanController> {
             _NominalField(),
             const SizedBox(height: 18),
 
-            _SectionLabel(text: 'Keterangan'),
+            _SectionLabel(text: 'Foto'),
             const SizedBox(height: 8),
-            _KeteranganField(),
+            _FotoField(),
             const SizedBox(height: 32),
 
             _SubmitButton(formKey: _formKey),
@@ -213,15 +214,16 @@ class _NominalField extends GetView<PermintaanController> {
   }
 }
 
-class _KeteranganField extends GetView<PermintaanController> {
-  const _KeteranganField();
+class _FotoField extends GetView<PermintaanController> {
+  const _FotoField();
 
   @override
   Widget build(BuildContext context) {
-    return CTextField(
-      controller: controller.keteranganController,
-      hintText: '',
-      maxLines: 5,
+    return Obx(
+      () => CUploadImageBox(
+        image: controller.image.value,
+        onTap: controller.pickImage,
+      ),
     );
   }
 }

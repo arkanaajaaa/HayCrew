@@ -35,14 +35,13 @@ class StokDagingItem {
   double get totalBobot => bobot * jumlah;
 
   Map<String, dynamic> toJson() => {
-        'jenis': jenis,
-        'bobot': bobot,
-        'jumlah': jumlah,
-      };
+    'jenis': jenis,
+    'bobot': bobot,
+    'jumlah': jumlah,
+  };
 }
 
 class LaporanStokController extends GetxController {
-
   final _storage = GetStorage();
   String get _token => _storage.read('token') ?? '';
 
@@ -86,7 +85,10 @@ class LaporanStokController extends GetxController {
     super.onInit();
     fetchLaporanGudang();
     _loadGudangOptions();
-    _pollTimer = Timer.periodic(ApiConstant.pollInterval, (_) => _loadGudangOptions());
+    _pollTimer = Timer.periodic(
+      ApiConstant.pollInterval,
+      (_) => _loadGudangOptions(),
+    );
   }
 
   Future<void> _loadGudangOptions() async {
@@ -94,11 +96,18 @@ class LaporanStokController extends GetxController {
   }
 
   Future<void> selectDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final initial =
+        (selectedDate.value != null && !selectedDate.value!.isAfter(today))
+        ? selectedDate.value!
+        : today;
+
     final picked = await showDatePicker(
       context: Get.context!,
-      initialDate: selectedDate.value ?? DateTime.now(),
+      initialDate: initial,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      lastDate: today,
       locale: const Locale('id', 'ID'),
     );
     if (picked != null) {
@@ -273,8 +282,7 @@ class LaporanStokController extends GetxController {
         'Authorization': 'Bearer $_token',
       });
 
-      request.fields['tempat_pendistribusian'] =
-          data['tempat_pendistribusian'];
+      request.fields['tempat_pendistribusian'] = data['tempat_pendistribusian'];
       request.fields['tanggal'] = data['tanggal'];
       if (data['catatan'] != null && data['catatan'].toString().isNotEmpty) {
         request.fields['catatan'] = data['catatan'];
@@ -348,8 +356,11 @@ class LaporanStokController extends GetxController {
         _refreshHomeIfExists();
         Get.snackbar('Berhasil', 'Laporan berhasil disinkron.');
       } else {
-        Get.snackbar('Gagal', 'Masih belum bisa terkirim. Coba lagi nanti.',
-            backgroundColor: Colors.orange.shade100);
+        Get.snackbar(
+          'Gagal',
+          'Masih belum bisa terkirim. Coba lagi nanti.',
+          backgroundColor: Colors.orange.shade100,
+        );
       }
       return success;
     } finally {

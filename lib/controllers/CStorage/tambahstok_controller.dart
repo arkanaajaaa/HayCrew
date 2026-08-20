@@ -49,7 +49,10 @@ class TambahStokController extends GetxController {
     super.onInit();
     fetchTambahStok();
     _loadGudangOptions();
-    _pollTimer = Timer.periodic(ApiConstant.pollInterval, (_) => _loadGudangOptions());
+    _pollTimer = Timer.periodic(
+      ApiConstant.pollInterval,
+      (_) => _loadGudangOptions(),
+    );
   }
 
   Future<void> _loadGudangOptions() async {
@@ -57,11 +60,18 @@ class TambahStokController extends GetxController {
   }
 
   Future<void> selectDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final initial =
+        (selectedDate.value != null && !selectedDate.value!.isAfter(today))
+        ? selectedDate.value!
+        : today;
+
     final picked = await showDatePicker(
       context: Get.context!,
-      initialDate: selectedDate.value ?? DateTime.now(),
+      initialDate: initial,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      lastDate: today,
       locale: const Locale('id', 'ID'),
     );
     if (picked != null) {
@@ -176,8 +186,7 @@ class TambahStokController extends GetxController {
       request.fields['tipe'] = 'barang';
       request.fields['tanggal'] = data['tanggal'];
       request.fields['jumlah'] = data['stok_masuk'].toString();
-      request.fields['tempat_pendistribusian'] =
-          data['tempat_pendistribusian'];
+      request.fields['tempat_pendistribusian'] = data['tempat_pendistribusian'];
       if (data['catatan'] != null && data['catatan'].toString().isNotEmpty) {
         request.fields['catatan'] = data['catatan'];
       }
@@ -237,8 +246,11 @@ class TambahStokController extends GetxController {
         _refreshHomeIfExists();
         Get.snackbar('Berhasil', 'Data berhasil disinkron.');
       } else {
-        Get.snackbar('Gagal', 'Masih belum bisa terkirim. Coba lagi nanti.',
-            backgroundColor: Colors.orange.shade100);
+        Get.snackbar(
+          'Gagal',
+          'Masih belum bisa terkirim. Coba lagi nanti.',
+          backgroundColor: Colors.orange.shade100,
+        );
       }
       return success;
     } finally {

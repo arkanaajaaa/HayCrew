@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "36545141309",
+    "project_id": "haycrew-62147",
+    "storage_bucket": "haycrew-62147.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:36545141309:android:38d28f483feeaab7336854",
+        "android_client_info": {
+          "package_name": "com.example.haycrew_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDl5vPp8G_SSX3wJYoFcinN-Zoo6KUWC6c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

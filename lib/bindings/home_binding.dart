@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/navbar_controller.dart';
 import '../controllers/profilecontroller.dart';
+import '../controllers/notifikasi_controller.dart';
 import '../controllers/CKandang/riwayat_kandang_controller.dart';
 
 class HomeBinding extends Bindings {
@@ -12,6 +13,11 @@ class HomeBinding extends Bindings {
     } else {
       Get.put<NavbarController>(NavbarController(), permanent: true);
     }
+
+    if (!Get.isRegistered<NotifikasiController>()) {
+      Get.put<NotifikasiController>(NotifikasiController(), permanent: true);
+    }
+
     Get.put<HomeController>(HomeController());
     Get.put<RiwayatKandangController>(RiwayatKandangController());
 

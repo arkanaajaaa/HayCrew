@@ -7,6 +7,8 @@ import '../../../constants/app_colors.dart';
 import '../../../controllers/home_controller.dart';
 import '../../../components/calender_widget.dart';
 import '../../../components/status_card_widget.dart';
+import '../../../routes/app_routes.dart';
+import '../../../controllers/notifikasi_controller.dart';
 
 class HomePageKandang extends StatefulWidget {
   const HomePageKandang({super.key});
@@ -149,20 +151,46 @@ class _HomeHeader extends StatelessWidget {
               ],
             ),
           ),
-
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              shape: BoxShape.circle,
-            ),
-          ),
+          Obx(() {
+            final unread = Get.find<NotifikasiController>().unreadCount;
+            return GestureDetector(
+              onTap: () => Get.toNamed(AppRoutes.NOTIFICATIONS),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  shape: BoxShape.circle,
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(
+                      Icons.notifications_outlined,
+                      color: AppColors.primaryGreen,
+                    ),
+                    if (unread > 0)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 9,
+                          height: 9,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
   }
 }
-
 
 class _HomeActionButtons extends StatelessWidget {
   final HomeController controller;

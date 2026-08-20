@@ -112,11 +112,17 @@ class LaporanController extends GetxController {
   }
 
   void selectDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final initial = (selectedDate.value != null && !selectedDate.value!.isAfter(today))
+        ? selectedDate.value!
+        : today;
+
     final picked = await showDatePicker(
       context: Get.context!,
-      initialDate: DateTime.now(),
+      initialDate: initial,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      lastDate: today,
       locale: const Locale('id', 'ID'),
     );
     if (picked != null) {

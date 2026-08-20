@@ -8,11 +8,7 @@ class CalendarWidget extends StatefulWidget {
   final Function(DateTime)? onDateSelected;
   final String token;
 
-  const CalendarWidget({
-    super.key,
-    this.onDateSelected,
-    required this.token,
-  });
+  const CalendarWidget({super.key, this.onDateSelected, required this.token});
 
   @override
   State<CalendarWidget> createState() => CalendarWidgetState();
@@ -34,7 +30,6 @@ class CalendarWidgetState extends State<CalendarWidget> {
     final daysFromMonday = date.weekday - 1;
     return date.subtract(Duration(days: daysFromMonday));
   }
-
 
   Future<void> refresh() => _loadEvents(showLoading: false);
 
@@ -79,9 +74,6 @@ class CalendarWidgetState extends State<CalendarWidget> {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(vertical: 16),
-      // Disamain sama gaya card lain di halaman (StatusCardWidget,
-      // CStokItemCard) — tint krem tipis + border + shadow halus — biar
-      // nyatu, nggak nongol sebagai blok warna khaki solid sendirian.
       decoration: BoxDecoration(
         color: AppColors.textFieldBg.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
@@ -115,46 +107,61 @@ class CalendarWidgetState extends State<CalendarWidget> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        InkWell(
-          onTap: _showMonthPicker,
-          borderRadius: BorderRadius.circular(6),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  DateFormat('MMMM yyyy', 'id_ID').format(_selectedWeekStart),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_drop_down, size: 20),
-              ],
+        Expanded(
+          child: InkWell(
+            onTap: _showMonthPicker,
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      DateFormat(
+                        'MMMM yyyy',
+                        'id_ID',
+                      ).format(_selectedWeekStart),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_drop_down, size: 20),
+                ],
+              ),
             ),
           ),
         ),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left, size: 20),
               onPressed: _previousWeek,
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               tooltip: 'Minggu sebelumnya',
             ),
             IconButton(
               icon: const Icon(Icons.chevron_right, size: 20),
               onPressed: _nextWeek,
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               tooltip: 'Minggu berikutnya',
             ),
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
               onPressed: _loadEvents,
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               tooltip: 'Muat ulang',
             ),
           ],
-        ),
+        ), 
       ],
     );
   }
@@ -197,23 +204,33 @@ class CalendarWidgetState extends State<CalendarWidget> {
                   itemCount: 12,
                   itemBuilder: (context, index) {
                     final month = index + 1;
-                    final isSelected = pickYear == _selectedWeekStart.year &&
+                    final isSelected =
+                        pickYear == _selectedWeekStart.year &&
                         month == _selectedWeekStart.month;
                     return TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor:
-                            isSelected ? AppColors.primaryGreen.withOpacity(0.15) : null,
-                        foregroundColor:
-                            isSelected ? AppColors.primaryGreen : Colors.black87,
+                        backgroundColor: isSelected
+                            ? AppColors.primaryGreen.withOpacity(0.15)
+                            : null,
+                        foregroundColor: isSelected
+                            ? AppColors.primaryGreen
+                            : Colors.black87,
                       ),
                       onPressed: () {
                         setState(() {
-                          _selectedWeekStart = _getStartOfWeek(DateTime(pickYear, month, 1));
+                          _selectedWeekStart = _getStartOfWeek(
+                            DateTime(pickYear, month, 1),
+                          );
                         });
                         Navigator.of(dialogContext).pop();
                         _loadEvents();
                       },
-                      child: Text(DateFormat('MMM', 'id_ID').format(DateTime(pickYear, month))),
+                      child: Text(
+                        DateFormat(
+                          'MMM',
+                          'id_ID',
+                        ).format(DateTime(pickYear, month)),
+                      ),
                     );
                   },
                 ),
@@ -241,16 +258,28 @@ class CalendarWidgetState extends State<CalendarWidget> {
   }
 
   Widget _buildCalendarGrid(List<DateTime> weekDates) {
+    final datesWithEvents = weekDates.where((date) {
+      final key = DateTime(date.year, date.month, date.day);
+      return _events[key]?.isNotEmpty ?? false;
+    }).toList();
+
+    if (datesWithEvents.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Text(
+          'Tidak ada event di rentang ini',
+          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
-        children: weekDates.map((date) {
-          return SizedBox(
-            width: 80,
-            child: _buildDateCard(date),
-          );
+        children: datesWithEvents.map((date) {
+          return SizedBox(width: 80, child: _buildDateCard(date));
         }).toList(),
       ),
     );
@@ -258,8 +287,6 @@ class CalendarWidgetState extends State<CalendarWidget> {
 
   Widget _buildDateCard(DateTime date) {
     final dateKey = DateTime(date.year, date.month, date.day);
-    final hasEvents =
-        _events.containsKey(dateKey) && _events[dateKey]!.isNotEmpty;
     final eventsCount = _events[dateKey]?.length ?? 0;
     final isToday = _isToday(date);
 
@@ -278,50 +305,31 @@ class CalendarWidgetState extends State<CalendarWidget> {
           borderRadius: BorderRadius.circular(8),
           border: isToday ? Border.all(color: Colors.white, width: 2) : null,
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  date.day.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Text(
-                    hasEvents ? '$eventsCount event' : 'Tidak ada\nevent',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      height: 1.1,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              date.day.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            if (hasEvents)
-              Positioned(
-                top: -2,
-                right: 2,
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Text(
+                '$eventsCount event',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  height: 1.1,
                 ),
               ),
+            ),
           ],
         ),
       ),

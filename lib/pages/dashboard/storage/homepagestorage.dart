@@ -8,6 +8,8 @@ import 'package:haycrew_app/components/calender_widget.dart';
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/controllers/CStorage/storagehome_controller.dart';
+import '../../../routes/app_routes.dart';
+import '../../../controllers/notifikasi_controller.dart';
 
 class HomePageStorage extends StatefulWidget {
   const HomePageStorage({super.key});
@@ -150,19 +152,40 @@ class _StorageHeader extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              shape: BoxShape.circle,
-            ),
-          ),
+          Obx(() {
+            final unread = Get.find<NotifikasiController>().unreadCount;
+            return GestureDetector(
+              onTap: () => Get.toNamed(AppRoutes.NOTIFICATIONS),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  shape: BoxShape.circle,
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications_outlined, color: AppColors.primaryGreen),
+                    if (unread > 0)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 9,
+                          height: 9,
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
   }
 }
-
 
 class _GudangFilterRow extends StatelessWidget {
   final StorageHomeController controller;

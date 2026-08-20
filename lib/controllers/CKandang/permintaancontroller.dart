@@ -1,16 +1,20 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
 import 'package:haycrew_app/constants/api_constant.dart';
 import 'package:haycrew_app/constants/app_colors.dart';
 import 'package:haycrew_app/components/CSuccessSplash.dart';
 import 'package:haycrew_app/controllers/home_controller.dart';
 import 'package:haycrew_app/utils/error_utils.dart';
 import 'package:haycrew_app/utils/currency_input_formatter.dart';
+import 'package:haycrew_app/utils/image_source_picker.dart';
 
 enum JenisPermintaan { barang, dana }
 
@@ -22,12 +26,14 @@ class PermintaanController extends GetxController {
 
   final keperluanController = TextEditingController();
   final nominalController = TextEditingController();
-  final keteranganController = TextEditingController();
 
   final selectedDate = Rxn<DateTime>();
   final formattedDate = 'Pilih Tanggal'.obs;
   final jenisPermintaan = JenisPermintaan.dana.obs;
   final isLoading = false.obs;
+
+  final Rx<File?> image = Rx<File?>(null);
+  bool _isPickingImage = false;
 
   String get nominalLabel =>
       jenisPermintaan.value == JenisPermintaan.dana ? 'Nominal*' : 'Jumlah*';
@@ -57,11 +63,17 @@ class PermintaanController extends GetxController {
   bool get isDanaSelected => jenisPermintaan.value == JenisPermintaan.dana;
 
   void onTapDatePicker() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final initial = (selectedDate.value != null && !selectedDate.value!.isAfter(today))
+        ? selectedDate.value!
+        : today;
+
     final picked = await showDatePicker(
       context: Get.context!,
-      initialDate: selectedDate.value ?? DateTime.now(),
+      initialDate: initial,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      lastDate: today,
       locale: const Locale('id', 'ID'),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
@@ -87,6 +99,30 @@ class PermintaanController extends GetxController {
     nominalController.clear();
   }
 
+  void pickImage() async {
+    // Mencegah eksekusi berulang jika galeri/kamera sedang terbuka
+    if (_isPickingImage) return;
+
+    try {
+      _isPickingImage = true;
+      final source = await pickImageSource();
+      if (source == null) return;
+
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 80,
+      );
+
+      if (picked != null) {
+        image.value = File(picked.path);
+      }
+    } catch (e) {
+      debugPrint('ImagePicker Error: $e');
+    } finally {
+      _isPickingImage = false;
+    }
+  }
+
   Future<void> submit() async {
     if (!_validate()) return;
 
@@ -97,42 +133,47 @@ class PermintaanController extends GetxController {
           ? 'dana'
           : 'barang';
 
-      final Map<String, String> body = {
-        'nama_permintaan': keperluanController.text.trim(),
-        'tipe': tipe,
-        'tanggal': DateFormat('yyyy-MM-dd').format(selectedDate.value!),
-      };
+      final uri = Uri.parse('$baseUrl/api/permintaan');
+      final request = http.MultipartRequest('POST', uri);
+
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $_token',
+      });
+
+      request.fields['nama_permintaan'] = keperluanController.text.trim();
+      request.fields['tipe'] = tipe;
+      request.fields['tanggal'] = DateFormat('yyyy-MM-dd').format(selectedDate.value!);
 
       if (tipe == 'dana') {
-        body['harga'] = nominalController.text.trim().replaceAll('.', '');
+        request.fields['harga'] = nominalController.text.trim().replaceAll('.', '');
       } else {
-        body['jumlah'] = nominalController.text.trim();
+        request.fields['jumlah'] = nominalController.text.trim();
       }
 
-      if (keteranganController.text.trim().isNotEmpty) {
-        body['keterangan'] = keteranganController.text.trim();
+      if (image.value != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'foto',
+            image.value!.path,
+            filename: path.basename(image.value!.path),
+          ),
+        );
       }
 
-      debugPrint('Body: $body');
+      debugPrint('Fields: ${request.fields}');
       debugPrint('Token: $_token');
 
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/api/permintaan'),
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $_token',
-            },
-            body: body,
-          )
-          .timeout(const Duration(seconds: 15));
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 15),
+      );
+      final statusCode = streamedResponse.statusCode;
+      final bodyStr = await streamedResponse.stream.bytesToString();
 
-      debugPrint('Status: ${response.statusCode}');
-      debugPrint('Response: ${response.body}');
+      debugPrint('Status: $statusCode');
+      debugPrint('Response: $bodyStr');
 
-      final responseBody = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (statusCode == 200 || statusCode == 201) {
         _resetForm();
 
         await CSuccessSplash.show(message: 'Permintaan berhasil\nterkirim');
@@ -146,7 +187,8 @@ class PermintaanController extends GetxController {
 
         return;
       } else {
-        _showError(responseBody['message'] ?? 'Gagal mengirim permintaan.');
+        final responseBody = bodyStr.isNotEmpty ? jsonDecode(bodyStr) : null;
+        _showError(responseBody?['message'] ?? 'Gagal mengirim permintaan.');
       }
     } catch (e, stack) {
       debugPrint('ERROR: $e');
@@ -198,17 +240,16 @@ class PermintaanController extends GetxController {
   void _resetForm() {
     keperluanController.clear();
     nominalController.clear();
-    keteranganController.clear();
     selectedDate.value = null;
     formattedDate.value = 'Pilih Tanggal';
     jenisPermintaan.value = JenisPermintaan.dana;
+    image.value = null;
   }
 
   @override
   void onClose() {
     keperluanController.dispose();
     nominalController.dispose();
-    keteranganController.dispose();
     super.onClose();
   }
 }
